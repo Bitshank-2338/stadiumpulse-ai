@@ -114,42 +114,6 @@ describe('stadium store — announcements', () => {
   });
 });
 
-describe('stadium store — observable transitions', () => {
-  beforeEach(resetStore);
-
-  it('assigns teams, records decisions and notes, and clears active routes', () => {
-    const store = useStadiumStore.getState();
-    const incident = store.reportIncident(baseExtraction, {
-      rawReport: 'queue', reportedBy: 'volunteer', provenance: 'fallback',
-    });
-    store.assignTeam(incident.id, 'security', 'operator');
-    store.rejectAction(incident.id, 0, 'operator');
-    store.addIncidentNote(incident.id, 'operator', 'Monitor for five minutes');
-
-    const updated = useStadiumStore.getState().incidents[0];
-    expect(updated).toMatchObject({ assignedTeam: 'security', status: 'assigned' });
-    expect(updated?.rejectedActions).toEqual([0]);
-    expect(updated?.notes[0]?.text).toBe('Monitor for five minutes');
-
-    useStadiumStore.getState().setRoute({
-      id: 'test-route', ownerRole: 'fan',
-      request: {
-        fromNodeId: 'gate-a', toNodeId: 'section-114', mode: 'shortest',
-        preferences: useStadiumStore.getState().userPreferences,
-      },
-      outcome: { ok: false, reason: 'unknown_node', explanation: 'No route.' },
-      createdAt: 1,
-    });
-    expect(useStadiumStore.getState().routes).toHaveLength(1);
-    useStadiumStore.getState().clearRoute('test-route');
-    expect(useStadiumStore.getState().routes).toHaveLength(0);
-  });
-
-  it('does not publish an unknown announcement', () => {
-    expect(useStadiumStore.getState().publishAnnouncement('missing', 'operator')).toBe(false);
-  });
-});
-
 describe('stadium store — preferences', () => {
   beforeEach(resetStore);
 

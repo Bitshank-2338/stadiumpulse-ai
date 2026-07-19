@@ -27,7 +27,6 @@ import type {
 } from '../types/domain';
 import { DEFAULT_PREFERENCES, HIGH_RISK_CATEGORIES } from '../types/domain';
 import { nextId } from '../lib/ids';
-import { systemPrefersReducedMotion } from '../lib/accessibility';
 
 export interface StadiumStore {
   simulation: SimulationState;
@@ -176,7 +175,10 @@ export const useStadiumStore = create<StadiumStore>((set, get) => {
       ...DEFAULT_PREFERENCES,
       // Seed from the OS-level preference so users who never open the
       // Accessibility panel still get reduced motion in the 3D scene.
-      reducedMotion: systemPrefersReducedMotion(),
+      reducedMotion:
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     },
     auditLog: [],
     aiStatus: INITIAL_AI_STATUS,

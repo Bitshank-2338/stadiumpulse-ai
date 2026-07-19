@@ -52,15 +52,9 @@ export function VolunteerReporter() {
   const [analyzing, setAnalyzing] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
-  const [blankReportError, setBlankReportError] = useState(false);
 
   const analyze = async (): Promise<void> => {
-    if (analyzing) return;
-    if (!text.trim()) {
-      setBlankReportError(true);
-      return;
-    }
-    setBlankReportError(false);
+    if (!text.trim() || analyzing) return;
     setAnalyzing(true);
     setSubmittedId(null);
     try {
@@ -111,18 +105,8 @@ export function VolunteerReporter() {
           className="sp-textarea"
           placeholder='e.g. "A huge queue is forming near Gate B and wheelchair users cannot move through the corridor."'
           value={text}
-          aria-invalid={blankReportError}
-          aria-describedby={blankReportError ? 'vol-text-error' : undefined}
-          onChange={(e) => {
-            setText(e.target.value);
-            setBlankReportError(false);
-          }}
+          onChange={(e) => setText(e.target.value)}
         />
-        {blankReportError && (
-          <p id="vol-text-error" role="alert" className="sp-muted">
-            Please describe what is happening before analyzing the report.
-          </p>
-        )}
 
         <div
           className="sp-grid-2"
@@ -172,7 +156,7 @@ export function VolunteerReporter() {
           type="button"
           className="sp-btn sp-btn-primary"
           style={{ marginTop: 10, width: '100%' }}
-          disabled={analyzing}
+          disabled={!text.trim() || analyzing}
           onClick={() => void analyze()}
         >
           {analyzing ? 'Analyzing…' : 'Analyze report'}

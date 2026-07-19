@@ -253,15 +253,13 @@ export function FanCompanion() {
             className="sp-input"
             placeholder='e.g. "Take me to Section 315 without stairs"'
             value={text}
-            aria-invalid={blankRequestError}
-            aria-describedby={blankRequestError ? 'fan-request-error' : undefined}
             onChange={(e) => {
               setText(e.target.value);
               setBlankRequestError(false);
             }}
           />
           {blankRequestError && (
-            <p id="fan-request-error" role="alert" className="sp-muted">
+            <p role="alert" className="sp-muted">
               Please describe where you want to go...
             </p>
           )}

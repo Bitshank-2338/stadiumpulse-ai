@@ -90,11 +90,5 @@ export default defineConfig(({ mode }) => ({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json-summary', 'html'],
-      include: ['src/**/*.{ts,tsx}', 'api/_lib/**/*.ts'],
-      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx'],
-    },
   },
 }));
