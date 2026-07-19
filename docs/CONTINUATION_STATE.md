@@ -57,3 +57,27 @@ D-001…D-007 in docs/DECISIONS.md (Vite SPA, PolyForm NC, rebuild-not-copy, npm
 1. M7: add the two client wrappers + deterministic fallbacks (`src/domain/` — transport advisory + sustainability recommendation) + Command Center buttons with provenance badges; decide accessibility-explanation (wire on accessible-route computation).
 2. Harden `context` handling in `gemini-core.ts` (delimit or schema-narrow).
 3. M9: responsive/mobile + a11y pass. M10: priority tests (fan-intent, health). M11: README + demo script + deploy decision (Cloud Run recommended).
+
+---
+
+## Update — end of recovery session (2026-07-19, late evening)
+
+Commits this session: `b431e7a` (M7 + ledger), `3091ce1` (M9/10 tests + fan-intent
+emergency fix + README), `afc0054` (fan-intent mode rules + live demo verification).
+
+Milestone matrix changes: **M7 VERIFIED COMPLETE** (all 8 AI tasks wired, live-
+verified). **M9 VERIFIED** (mobile/a11y spot audit passed, all 6 views). **M10
+substantially advanced** (93/93 tests; fan-intent + health now covered; two real
+fan-intent bugs fixed with regressions). **M11 started** (README.md complete).
+**M12 prep done** (full judge flow manually verified against live Vertex Gemini,
+including the elevator-outage South Elevator reroute).
+
+Open items for next session:
+1. **Deployment decision (user):** Cloud Run (ADC-native, org-aligned) vs Vercel
+   (API-key path only). No code change made; local ADC dev verified working.
+2. **User housekeeping:** remove/rotate the GEMINI_API_KEY in local `.env`.
+3. Optional hardening: rate-limiter/repair-loop tests, component tests, WebGL
+   context-loss recovery, marker geometry pooling, narrow `context` schema
+   server-side (app_state delimiting is done).
+4. M11 remainder: submission packaging per PromptWars requirements (screenshots/
+   video if required by the submission form).
