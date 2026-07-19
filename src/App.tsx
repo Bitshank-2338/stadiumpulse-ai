@@ -4,18 +4,22 @@ import { crowdHeat, facilityMarkers, incidentMarkers, outageMarkers } from './st
 import { FanCompanion } from './features/fan/fan-companion';
 import { AccessibilityPanel } from './features/access/accessibility-panel';
 import { ScenarioLab } from './features/scenarios/scenario-lab';
+import { VolunteerReporter } from './features/volunteer/volunteer-reporter';
+import { CommandCenter } from './features/ops/command-center';
 import './styles/ui.css';
 
 const StadiumCanvas = lazy(() =>
   import('./components/stadium-canvas').then((m) => ({ default: m.StadiumCanvas })),
 );
 
-type View = 'twin' | 'fan' | 'access' | 'scenarios';
+type View = 'twin' | 'fan' | 'access' | 'volunteer' | 'ops' | 'scenarios';
 
 const VIEWS: { id: View; label: string }[] = [
   { id: 'twin', label: 'Digital Twin' },
   { id: 'fan', label: 'Fan Companion' },
   { id: 'access', label: 'Accessibility' },
+  { id: 'volunteer', label: 'Volunteer' },
+  { id: 'ops', label: 'Operations' },
   { id: 'scenarios', label: 'Scenario Lab' },
 ];
 
@@ -173,6 +177,8 @@ export function App() {
               <FanCompanion />
             </>
           )}
+          {view === 'volunteer' && <VolunteerReporter />}
+          {view === 'ops' && <CommandCenter />}
           {view === 'scenarios' && <ScenarioLab />}
         </aside>
       </div>

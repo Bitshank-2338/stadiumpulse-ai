@@ -51,3 +51,40 @@
 - Fixed during verify: scenario seeded a zone id (`gate-b-concourse`) instead of
   node id (`concourse-b`) — caught by graph-integrity test.
 - Validation: `typecheck` ✅, `lint` ✅, `test` 27/27 ✅, `build` ✅.
+
+## Milestone 4 (core) — Fan & Accessibility Experience ✅ (2026-07-19)
+
+- Fan Companion: origin select, 10 functional quick actions, NL requests via
+  deterministic intent interpreter (`src/domain/fan-intent.ts` — doubles as the
+  no-key fallback for M6), route card (distance/ETA/congestion/step-free),
+  explained failures with assistance-desk fallback button, emergency requests
+  feed the shared incident queue.
+- Accessibility panel: 11 preferences; wheelchair/step-free force accessible
+  routing in every mode; high-contrast + reduced-motion drive theme attributes.
+- Scenario Lab wired to the scenario engine with live health badge.
+- Store→scene selectors: incident/outage/facility markers, crowd-heat discs,
+  route polyline (accessible routes violet).
+- Verify-loop fixes: strict type-predicate errors in selectors (rewritten with
+  typed accumulation), unused import.
+
+## Milestone 5 — Volunteer & Operations Workflow ✅ (2026-07-19)
+
+- `src/domain/incident-extraction.ts`: rule-based NL→IncidentExtraction
+  fallback (12 category rules, location/people detection, conservative
+  low-confidence 'other'), duplicate guard (same category+location while
+  unresolved).
+- `src/domain/announcements.ts`: deterministic EN/ES/FR/HI announcement
+  templates per incident category.
+- Volunteer Reporter: NL report, 6 category shortcuts, simulated voice
+  transcript, location hint, structured preview (category/severity/location/
+  impacts/team/actions/confidence/missing info/human-review), confirm-before-
+  submit, duplicate submission blocked, recent-reports list.
+- Operations Command Center: health breakdown (6 badges), incident queue with
+  acknowledge/assign/approve-reject-per-action/note/resolve/reopen (resolve
+  refusals explained), announcement center (draft→approve→publish gate),
+  environment panel (outages/transport/waste), audit log (last 30, mono).
+- Cross-role integration test mirrors the 19-step judge demo at store level:
+  fan step-free route → volunteer report → surge scenario → health drop →
+  operator approval → 4-language announcement publish → elevator-outage
+  reroute via south elevator → resolve → baseline recovery → audit trail.
+- Validation: `typecheck` ✅, `lint` ✅, `test` 37/37 ✅, `build` ✅.
