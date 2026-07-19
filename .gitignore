@@ -11,3 +11,4 @@ coverage
 .DS_Store
 # Read-only reference clone — not part of this repository
 reference-football-stadium/
+dist-server

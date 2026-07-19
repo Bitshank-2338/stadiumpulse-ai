@@ -81,3 +81,11 @@ Open items for next session:
    server-side (app_state delimiting is done).
 4. M11 remainder: submission packaging per PromptWars requirements (screenshots/
    video if required by the submission form).
+
+## Update — Cloud Run deployment (2026-07-19, night)
+
+Deployed: **https://stadiumpulse-ai-1030864030501.asia-south1.run.app**
+(service stadiumpulse-ai, asia-south1, project fifa-502907). ADC via default
+compute SA with roles/aiplatform.user; no keys. New files: server/index.ts,
+Dockerfile, .dockerignore. Redeploy with the same `gcloud run deploy` command
+in BUILD_LOG. Deployment decision resolved: Option A (Cloud Run).

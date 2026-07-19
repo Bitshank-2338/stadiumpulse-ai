@@ -184,3 +184,23 @@
   mode rules (escalators are not step-free); re-verified live: mode step_free,
   outage reroute correct.
 - Validation: typecheck ✅, lint ✅, test 93/93 ✅, build ✅.
+
+## Deployment — Google Cloud Run ✅ (2026-07-19)
+
+- Added production server (`server/index.ts`): serves dist/ statically with SPA
+  fallback and mounts the same `runGeminiTask` core at /api/gemini/* (identical
+  endpoint→task allowlist as the Vercel functions and the Vite dev bridge).
+- Two-stage Dockerfile (node:24-slim): builder runs `npm run build` + esbuild
+  bundle of the server; runtime has prod deps only, runs as non-root `node`.
+- Deployed via `gcloud run deploy --source`: service **stadiumpulse-ai**,
+  region asia-south1, 512Mi/1CPU, max 3 instances, public.
+- Auth: Vertex AI via ADC from the attached default compute service account
+  (granted roles/aiplatform.user). No API keys or exported credentials
+  anywhere in image, env, or repo.
+- IAM fixes required en route: storage.objectViewer on the run-sources bucket,
+  artifactregistry.writer + logging.logWriter for the build SA.
+- Live URL: https://stadiumpulse-ai-1030864030501.asia-south1.run.app
+- Verified in production: SPA + 3D canvas render; fan-guidance endpoint
+  returned live Vertex Gemini (provenance gemini, ~1.8–3.4s); route rendered
+  in browser. Note: /healthz is intercepted by Google Frontend on run.app
+  (reserved path) — harmless; Cloud Run health checks are container-level.

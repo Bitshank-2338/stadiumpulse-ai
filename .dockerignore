@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-server
+reference-football-stadium
+.git
+.env
+.env.*
+!.env.example
+.vercel
+.claude
+docs
+coverage
+*.tsbuildinfo
+Dockerfile
+.dockerignore

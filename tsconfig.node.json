@@ -23,6 +23,7 @@
   "include": [
     "vite.config.ts",
     "api",
+    "server",
     "src/ai/config.ts",
     "src/ai/schemas.ts",
     "src/data/stadium-graph.ts",
