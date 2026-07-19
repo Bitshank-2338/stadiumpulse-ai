@@ -19,11 +19,16 @@ function geminiDevApi(mode: string): Plugin {
     name: 'stadiumpulse-gemini-dev-api',
     configureServer(server) {
       const env = loadEnv(mode, process.cwd(), '');
-      if (env['GEMINI_API_KEY'] && !process.env['GEMINI_API_KEY']) {
-        process.env['GEMINI_API_KEY'] = env['GEMINI_API_KEY'];
-      }
-      if (env['GEMINI_MODEL'] && !process.env['GEMINI_MODEL']) {
-        process.env['GEMINI_MODEL'] = env['GEMINI_MODEL'];
+      for (const key of [
+        'GEMINI_API_KEY',
+        'GEMINI_MODEL',
+        'GOOGLE_GENAI_USE_VERTEXAI',
+        'GOOGLE_CLOUD_PROJECT',
+        'GOOGLE_CLOUD_LOCATION',
+      ]) {
+        if (env[key] && !process.env[key]) {
+          process.env[key] = env[key];
+        }
       }
       server.middlewares.use('/api/gemini', (req, res) => {
         void (async () => {

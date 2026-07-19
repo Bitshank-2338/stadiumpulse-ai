@@ -13,8 +13,15 @@ const LIVE = process.env['GEMINI_LIVE'] === '1';
 describe.skipIf(!LIVE)('live gemini smoke', () => {
   it('extracts a structured incident from the reference example', async () => {
     const env = loadEnv('development', process.cwd(), '');
-    if (env['GEMINI_API_KEY']) process.env['GEMINI_API_KEY'] = env['GEMINI_API_KEY'];
-    if (env['GEMINI_MODEL']) process.env['GEMINI_MODEL'] = env['GEMINI_MODEL'];
+    for (const key of [
+      'GEMINI_API_KEY',
+      'GEMINI_MODEL',
+      'GOOGLE_GENAI_USE_VERTEXAI',
+      'GOOGLE_CLOUD_PROJECT',
+      'GOOGLE_CLOUD_LOCATION',
+    ]) {
+      if (env[key]) process.env[key] = env[key];
+    }
 
     const result = await runGeminiTask({
       task: 'incident',

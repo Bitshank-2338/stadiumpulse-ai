@@ -137,10 +137,33 @@ async function callModel(
   }
 }
 
-export async function runGeminiTask(req: GeminiTaskRequest): Promise<GeminiTaskResult> {
+/**
+ * Build the SDK client from environment:
+ * - GOOGLE_GENAI_USE_VERTEXAI=true → Vertex AI with GOOGLE_CLOUD_PROJECT /
+ *   GOOGLE_CLOUD_LOCATION and Application Default Credentials.
+ * - otherwise → Gemini API with GEMINI_API_KEY.
+ */
+function createClient(): GoogleGenAI | { error: string } {
+  const useVertex = process.env['GOOGLE_GENAI_USE_VERTEXAI'] === 'true';
+  if (useVertex) {
+    const project = process.env['GOOGLE_CLOUD_PROJECT'];
+    const location = process.env['GOOGLE_CLOUD_LOCATION'] || 'global';
+    if (!project) {
+      return { error: 'GOOGLE_CLOUD_PROJECT is not configured for Vertex AI mode' };
+    }
+    return new GoogleGenAI({ vertexai: true, project, location });
+  }
   const apiKey = process.env['GEMINI_API_KEY'];
   if (!apiKey) {
-    return { ok: false, error: 'GEMINI_API_KEY is not configured', status: 503 };
+    return { error: 'GEMINI_API_KEY is not configured' };
+  }
+  return new GoogleGenAI({ apiKey });
+}
+
+export async function runGeminiTask(req: GeminiTaskRequest): Promise<GeminiTaskResult> {
+  const client = createClient();
+  if (!(client instanceof GoogleGenAI)) {
+    return { ok: false, error: client.error, status: 503 };
   }
   const schema = TASK_SCHEMAS[req.task];
   const taskPrompt = TASK_PROMPTS[req.task];
@@ -152,7 +175,7 @@ export async function runGeminiTask(req: GeminiTaskRequest): Promise<GeminiTaskR
   }
 
   const model = resolveModel(process.env['GEMINI_MODEL']);
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = client;
   const system = SHARED_RULES + '\n\nTASK:\n' + taskPrompt;
 
   const userText = (req.userText ?? '').slice(0, 2000);
