@@ -10,11 +10,14 @@
 import { z } from 'zod';
 import { AI_CONFIG } from './config';
 import {
+  AccessibilityExplanationSchema,
   AnnouncementSchema,
   FanIntentSchema,
   IncidentExtractionSchema,
   RouteExplanationSchema,
   SituationBriefSchema,
+  SustainabilityRecommendationSchema,
+  TransportAdvisorySchema,
 } from './schemas';
 import type { AiTaskKind } from './schemas';
 import { useStadiumStore } from '../store/stadium-store';
@@ -127,4 +130,31 @@ export const aiClient = {
     context: unknown,
     fallback: () => z.infer<typeof AnnouncementSchema>,
   ) => callTask('announcement', AnnouncementSchema, { context }, fallback),
+
+  transportAdvisory: (
+    context: unknown,
+    fallback: () => z.infer<typeof TransportAdvisorySchema>,
+  ) => callTask('transport-advisory', TransportAdvisorySchema, { context }, fallback),
+
+  sustainabilityRecommendation: (
+    context: unknown,
+    fallback: () => z.infer<typeof SustainabilityRecommendationSchema>,
+  ) =>
+    callTask(
+      'sustainability-recommendation',
+      SustainabilityRecommendationSchema,
+      { context },
+      fallback,
+    ),
+
+  explainAccessibleRoute: (
+    context: unknown,
+    fallback: () => z.infer<typeof AccessibilityExplanationSchema>,
+  ) =>
+    callTask(
+      'accessibility-explanation',
+      AccessibilityExplanationSchema,
+      { context },
+      fallback,
+    ),
 };

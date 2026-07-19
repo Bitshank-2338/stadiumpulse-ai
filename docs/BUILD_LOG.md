@@ -116,3 +116,38 @@
   429 RESOURCE_EXHAUSTED (prepayment credits depleted) — key/billing issue on
   the user side. Fallback engaged correctly. Awaiting a funded/free-tier key.
 - Validation: `typecheck` ✅, `lint` ✅, `test` 48/48 ✅ (+1 gated live).
+
+## Recovery Session — State Reconstruction (2026-07-19 evening)
+
+- New orchestrator session (Claude Fable 5) reconstructed project state from the
+  repository; previous chat context unavailable.
+- 4 read-only audit agents (archaeology, QA, 3D, GenAI security) + orchestrator
+  verification. Full findings in docs/CONTINUATION_STATE.md.
+- Baseline validation: typecheck ✅, lint ✅, test 48/48 ✅ (live test gated),
+  build ✅.
+- Live browser check: fan step-free request answered by real Vertex Gemini
+  (4.0s, provenance badge), deterministic elevator route rendered, audit log
+  synchronized across views. Vertex ADC path confirmed working locally.
+- Milestone verdict: M0–M6 and M8 VERIFIED COMPLETE; M7 PARTIAL (3 AI tasks
+  unwired: transport-advisory, sustainability-recommendation,
+  accessibility-explanation); M9/11/12 not started.
+- Resuming at Milestone 7.
+
+## Milestone 7 — Transport, Sustainability & Accessible-Route AI ✅ (2026-07-19)
+
+- Sonnet worker implemented under orchestrator review; type-safety fix
+  (AuditAction union extended, casts removed) applied by orchestrator.
+- `src/ai/client.ts`: +3 wrappers — transportAdvisory,
+  sustainabilityRecommendation, explainAccessibleRoute.
+- `src/domain/advisories.ts` (new): deterministic fallbacks branching on
+  metro status and waste fill; 7 schema-validation tests.
+- Command Center Environment panel: "Transport advisory" + "Sustainability
+  analysis" buttons, provenance-badged cards, audit entries
+  (transport_advisory_generated / sustainability_recommendation_generated).
+- Fan Companion: accessible routes (wheelchair/step-free prefs or step_free
+  mode) now use accessibility-explanation task with step-by-step fallback.
+- Security hardening: prompt context now wrapped in <app_state> tags with
+  marker stripping + SHARED_RULES sentence (closes audit finding).
+- Validation: typecheck ✅, lint ✅, test 55/55 ✅, build ✅.
+- Runtime verified in browser: both buttons returned live Vertex Gemini
+  results with GEMINI badges and audit-log entries.

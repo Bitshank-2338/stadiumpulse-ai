@@ -55,3 +55,19 @@ Log of all specialist-agent handoffs, per the Context Handoff Protocol.
 - **Final acceptance decision:** REASSIGNED TO ORCHESTRATOR.
 
 ---
+
+## 00X — Recovery audit fleet (2026-07-19, continuation session)
+
+- Agent A (Haiku, read-only): implementation archaeology. Verdict: M8 complete,
+  M7 partial, 3 unwired AI tasks, no README. ACCEPTED (verified by grep of
+  src/ai/client.ts — only 5 wrappers exported).
+- Agent B (Haiku, read-only): QA audit. Test matrix + ranked untested risks
+  (fan-intent parser, health formula, rate limiter, repair loop, components).
+  ACCEPTED; queued for M9/10.
+- Agent C (Haiku, read-only): 3D audit. Attribution compliant, dispose chain
+  leak-free, store→scene fully wired; minor: marker geometry churn, no
+  context-loss recovery, dead focusOn/topDown. ACCEPTED.
+- Agent D (Sonnet, read-only): GenAI security. No browser credential exposure,
+  honest fallbacks, prompt-injection defence good for userText but `context`
+  undelimited (should-fix), Vertex-ADC-on-Vercel deployment mismatch flagged.
+  ACCEPTED; context hardening + deploy decision queued.

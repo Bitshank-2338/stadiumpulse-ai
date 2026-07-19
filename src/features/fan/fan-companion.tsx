@@ -76,26 +76,39 @@ export function FanCompanion() {
         createdAt: Date.now(),
       });
       // Ask Gemini to explain the deterministically computed route.
-      void aiClient
-        .explainRoute(
-          {
-            from: nodeLabel(origin),
-            to: nodeLabel(toNodeId),
-            mode,
-            distanceMeters: result.distanceMeters,
-            etaSeconds: result.etaSeconds,
-            stepFree: result.stepFree,
-            usesElevator: result.usesElevator,
-            stops: result.nodeIds.map(nodeLabel),
-            notes: result.notes,
-            preferences: prefs,
-          },
-          () => ({
+      const routeContext = {
+        from: nodeLabel(origin),
+        to: nodeLabel(toNodeId),
+        mode,
+        distanceMeters: result.distanceMeters,
+        etaSeconds: result.etaSeconds,
+        stepFree: result.stepFree,
+        usesElevator: result.usesElevator,
+        stops: result.nodeIds.map(nodeLabel),
+        notes: result.notes,
+        preferences: prefs,
+      };
+      const needsAccessibleExplanation =
+        prefs.wheelchair || prefs.stepFree || mode === 'step_free';
+      if (needsAccessibleExplanation) {
+        void aiClient
+          .explainAccessibleRoute(routeContext, () => ({
+            explanation: `Head from ${nodeLabel(origin)} to ${nodeLabel(toNodeId)} — about ${Math.max(1, Math.round(result.etaSeconds / 60))} minutes over ${result.distanceMeters} m, step-free.`,
+            stepByStep:
+              result.nodeIds.length > 1
+                ? result.nodeIds.slice(1).map((id) => `Continue to ${nodeLabel(id)}`)
+                : ['Follow the marked step-free route to your destination.'],
+            reassurance: 'Staff are available along the route if you need assistance.',
+          }))
+          .then((r) => setExplanation(r.data.explanation));
+      } else {
+        void aiClient
+          .explainRoute(routeContext, () => ({
             explanation: `Head from ${nodeLabel(origin)} to ${nodeLabel(toNodeId)} — about ${Math.max(1, Math.round(result.etaSeconds / 60))} minutes over ${result.distanceMeters} m.`,
             accessibilityNotes: result.notes,
-          }),
-        )
-        .then((r) => setExplanation(r.data.explanation));
+          }))
+          .then((r) => setExplanation(r.data.explanation));
+      }
     } else {
       setExplanation(null);
     }

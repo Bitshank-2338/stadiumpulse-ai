@@ -7,11 +7,16 @@ import { useState } from 'react';
 import { useStadiumStore } from '../../store/stadium-store';
 import { computeHealth } from '../../domain/health';
 import { draftAnnouncementFallback } from '../../domain/announcements';
+import { sustainabilityFallback, transportAdvisoryFallback } from '../../domain/advisories';
 import { HIGH_RISK_CATEGORIES } from '../../types/domain';
 import type { AiProvenance, Incident, TeamId } from '../../types/domain';
 import { nodeLabel } from '../../store/selectors';
 import { aiClient } from '../../ai/client';
-import type { SituationBriefOut } from '../../ai/schemas';
+import type {
+  SituationBriefOut,
+  SustainabilityRecommendationOut,
+  TransportAdvisoryOut,
+} from '../../ai/schemas';
 
 const TEAMS: TeamId[] = [
   'crowd-operations',
@@ -263,9 +268,20 @@ export function CommandCenter() {
   const approveAnnouncement = useStadiumStore((s) => s.approveAnnouncement);
   const publishAnnouncement = useStadiumStore((s) => s.publishAnnouncement);
 
+  const appendAudit = useStadiumStore((s) => s.appendAudit);
+
   const [brief, setBrief] = useState<SituationBriefOut | null>(null);
   const [briefProvenance, setBriefProvenance] = useState<AiProvenance>('fallback');
   const [briefing, setBriefing] = useState(false);
+
+  const [transportAdvisory, setTransportAdvisory] = useState<TransportAdvisoryOut | null>(null);
+  const [transportProvenance, setTransportProvenance] = useState<AiProvenance>('fallback');
+  const [transportLoading, setTransportLoading] = useState(false);
+
+  const [sustainabilityAdvisory, setSustainabilityAdvisory] =
+    useState<SustainabilityRecommendationOut | null>(null);
+  const [sustainabilityProvenance, setSustainabilityProvenance] = useState<AiProvenance>('fallback');
+  const [sustainabilityLoading, setSustainabilityLoading] = useState(false);
 
   const generateBrief = async (): Promise<void> => {
     if (briefing) return;
@@ -312,6 +328,48 @@ export function CommandCenter() {
       setBriefProvenance(result.provenance);
     } finally {
       setBriefing(false);
+    }
+  };
+
+  const generateTransportAdvisory = async (): Promise<void> => {
+    if (transportLoading) return;
+    setTransportLoading(true);
+    const s = useStadiumStore.getState();
+    try {
+      const result = await aiClient.transportAdvisory(
+        { transport: s.transport },
+        () => transportAdvisoryFallback(s.transport),
+      );
+      setTransportAdvisory(result.data);
+      setTransportProvenance(result.provenance);
+      appendAudit(
+        'operator',
+        'transport_advisory_generated',
+        result.data.headline,
+      );
+    } finally {
+      setTransportLoading(false);
+    }
+  };
+
+  const generateSustainabilityAnalysis = async (): Promise<void> => {
+    if (sustainabilityLoading) return;
+    setSustainabilityLoading(true);
+    const s = useStadiumStore.getState();
+    try {
+      const result = await aiClient.sustainabilityRecommendation(
+        { sustainability: s.sustainability },
+        () => sustainabilityFallback(s.sustainability),
+      );
+      setSustainabilityAdvisory(result.data);
+      setSustainabilityProvenance(result.provenance);
+      appendAudit(
+        'operator',
+        'sustainability_recommendation_generated',
+        result.data.headline,
+      );
+    } finally {
+      setSustainabilityLoading(false);
     }
   };
 
@@ -519,6 +577,64 @@ export function CommandCenter() {
             <li key={a} className="sp-muted">♻️ {a}</li>
           ))}
         </ul>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
+          <button
+            type="button"
+            className="sp-btn"
+            disabled={transportLoading}
+            onClick={() => void generateTransportAdvisory()}
+          >
+            {transportLoading ? 'Generating…' : 'Transport advisory'}
+          </button>
+          <button
+            type="button"
+            className="sp-btn"
+            disabled={sustainabilityLoading}
+            onClick={() => void generateSustainabilityAnalysis()}
+          >
+            {sustainabilityLoading ? 'Analyzing…' : 'Sustainability analysis'}
+          </button>
+        </div>
+
+        {transportAdvisory && (
+          <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
+            <p>
+              <strong>{transportAdvisory.headline}</strong>{' '}
+              <span
+                className={`sp-provenance sp-badge ${transportProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}
+              >
+                {transportProvenance === 'gemini' ? 'Gemini' : 'fallback'}
+              </span>
+            </p>
+            <p>{transportAdvisory.advisory}</p>
+            {transportAdvisory.recommendedExits.length > 0 && (
+              <p className="sp-muted">
+                Recommended exits: {transportAdvisory.recommendedExits.join(', ')}
+              </p>
+            )}
+            <p className="sp-muted">Expected delay: {transportAdvisory.expectedDelayMinutes} min</p>
+          </div>
+        )}
+
+        {sustainabilityAdvisory && (
+          <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
+            <p>
+              <strong>{sustainabilityAdvisory.headline}</strong>{' '}
+              <span
+                className={`sp-provenance sp-badge ${sustainabilityProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}
+              >
+                {sustainabilityProvenance === 'gemini' ? 'Gemini' : 'fallback'}
+              </span>
+            </p>
+            <p>{sustainabilityAdvisory.explanation}</p>
+            <ul className="sp-list">
+              {sustainabilityAdvisory.actions.map((a) => (
+                <li key={a}>• {a}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       <section className="sp-card" aria-labelledby="audit-heading">

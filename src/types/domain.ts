@@ -366,6 +366,8 @@ export type AuditAction =
   | 'scenario_activated'
   | 'scenario_reset'
   | 'route_requested'
+  | 'transport_advisory_generated'
+  | 'sustainability_recommendation_generated'
   | 'ai_fallback_used';
 
 export interface AuditEntry {
