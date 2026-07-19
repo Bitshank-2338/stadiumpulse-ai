@@ -1,0 +1,105 @@
+/* StadiumPulse AI design tokens — dark stadium control-room aesthetic.
+   Original StadiumPulse AI code. */
+
+:root {
+  /* Surfaces */
+  --sp-bg: #05080f;
+  --sp-surface: #0b1220;
+  --sp-surface-raised: #101a2e;
+  --sp-border: #1d2b45;
+
+  /* Text */
+  --sp-text: #e6eefb;
+  --sp-text-muted: #93a4c3;
+
+  /* Operational accents */
+  --sp-cyan: #22d3ee;
+  --sp-cyan-strong: #67e8f9;
+  --sp-healthy: #34d399;
+  --sp-caution: #fbbf24;
+  --sp-urgent: #f87171;
+  --sp-accessible: #c4b5fd;
+
+  /* Focus */
+  --sp-focus: #67e8f9;
+
+  --sp-radius: 12px;
+  --sp-radius-sm: 8px;
+  --sp-font:
+    'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --sp-font-mono: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+}
+
+/* High-contrast mode (driven by store preference via data attribute) */
+[data-high-contrast='true'] {
+  --sp-bg: #000000;
+  --sp-surface: #05070d;
+  --sp-surface-raised: #0a0f1a;
+  --sp-border: #3b517a;
+  --sp-text: #ffffff;
+  --sp-text-muted: #c3d0e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--sp-bg);
+  color: var(--sp-text);
+  font-family: var(--sp-font);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--sp-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Store-driven reduced motion mirrors the media query */
+[data-reduced-motion='true'] *,
+[data-reduced-motion='true'] *::before,
+[data-reduced-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  transition-duration: 0.01ms !important;
+}
+
+.sp-disclaimer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  padding: 4px 12px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--sp-text-muted);
+  background: color-mix(in srgb, var(--sp-bg) 88%, transparent);
+  border-top: 1px solid var(--sp-border);
+}
