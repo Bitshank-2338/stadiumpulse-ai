@@ -40,3 +40,18 @@ Log of all specialist-agent handoffs, per the Context Handoff Protocol.
 - **Final acceptance decision:** ACCEPTED WITH TRIMS.
 
 ---
+
+## Entry 003 — Three.js Specialist (blocked)
+
+- **Milestone:** 2 — Stadium Digital Twin
+- **Agent role:** Three.js Specialist
+- **Assigned model class:** Mid-cost (Sonnet-class)
+- **Objective:** Port the reference stadium (renderer, geometry, seating, crowd, orbit camera, adaptive quality) into typed `src/scene/` modules + React wrapper.
+- **Files inspected:** reference index.html, project scaffold.
+- **Files changed:** None — the environment denied the agent's Write/shell permissions.
+- **Result:** BLOCKED. No changes made.
+- **Validation:** N/A.
+- **Rework required:** Orchestrator (Fable) took over the port directly — this is Tier-1 Three.js integration work and the orchestrator holds write access.
+- **Final acceptance decision:** REASSIGNED TO ORCHESTRATOR.
+
+---

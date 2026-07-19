@@ -18,3 +18,36 @@
 - Adapted `mulberry32` seeded RNG from reference (attributed in-file).
 - Design tokens (`src/styles/theme.css`): dark control-room theme, cyan accents, high-contrast + reduced-motion modes, persistent disclaimer style.
 - Validation: `typecheck` ✅, `lint` ✅, `test` 7/7 ✅, `build` ✅.
+
+## Milestone 2 — Stadium Digital Twin (visual foundation) ✅ (2026-07-19)
+
+- Three.js Specialist agent was write-blocked by the environment permission layer; orchestrator performed the port directly (see AGENT_LOG entry 003).
+- Ported to typed modules under `src/scene/` with attribution headers:
+  `geometry.ts` (ringStrip/canvasTexture/merge), `seating.ts` (arcTable/thetaAt
+  elliptical arc-length layout, single InstancedMesh, ~9k seats, reference tier
+  dimensions preserved as world-scale contract), `bowl.ts` (tiers, roof, glass,
+  pitch, floodlights — dark cyan control-room palette), `crowd.ts` (instanced
+  torsos/heads, onBeforeCompile sway shader, reduced-motion freeze),
+  `quality.ts` (FPS-adaptive pixel ratio), `stadium-scene.ts` (custom smoothed
+  spherical orbit + pinch/wheel/keyboard, rAF loop, no GSAP).
+- Modern three API: `outputColorSpace`/`texture.colorSpace` (r128 `encoding` removed).
+- Original overlay APIs for operations: `setMarkers`, `setRoutePath` (tube along
+  Catmull-Rom), `setZoneHeat` (green→red discs) — store-driven later.
+- React wrapper `src/components/stadium-canvas.tsx`: mount-once, ResizeObserver,
+  loading state, WebGL-failure text fallback, lazy-loaded (own chunk).
+
+## Milestone 3 — Deterministic Domain Engine ✅ (2026-07-19)
+
+- `src/data/stadium-graph.ts`: 41-node typed graph (6 gates, dual concourse
+  rings, 4 seating entrances, 2 elevators/stairs/escalators, 13 facilities,
+  metro + shuttle exits) in scene world coordinates.
+- `src/domain/routing.ts`: Dijkstra with mode- and preference-aware edge
+  filtering/costs (step-free, avoid stairs/escalators, least-crowded,
+  reduced-sensory, emergency), elevator-outage awareness, explained failures
+  with assistance-desk fallback, facility ranking.
+- `src/domain/health.ts`: weighted deterministic health breakdown.
+- `src/domain/scenarios.ts`: all 9 scenarios as reproducible state packages
+  applied via store actions; baseline snapshot reset.
+- Fixed during verify: scenario seeded a zone id (`gate-b-concourse`) instead of
+  node id (`concourse-b`) — caught by graph-integrity test.
+- Validation: `typecheck` ✅, `lint` ✅, `test` 27/27 ✅, `build` ✅.
