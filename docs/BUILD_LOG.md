@@ -1,5 +1,13 @@
 # StadiumPulse AI — Build Log
 
+
+## 2026-07-19 — Maintainability, testing and WCAG follow-up
+
+- Refactored Command Center into focused modules without changing behavior.
+- Added `test:coverage` (V8) and `test:a11y` (axe-core) scripts.
+- Added API handler, store transition, reduced-motion and application accessibility tests.
+- Browser matrix: 360×800, 390×844, 768×1024, 1366×768 and 1920×1080.
+
 ## Milestone 0 — Reference and Licence Audit ✅ (2026-07-19)
 
 - Cloned reference repo (read-only) to `reference-football-stadium/`.

@@ -21,7 +21,7 @@ export function ScenarioLab() {
           the 3D twin, crowd overlays, incident queue, routes, dashboards and
           the health score all react.
         </p>
-        <p>
+        <p aria-live="polite">
           Stadium health:{' '}
           <span
             className={`sp-badge ${

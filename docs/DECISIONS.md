@@ -1,5 +1,14 @@
 # StadiumPulse AI — Decision Record
 
+
+## D-010: Keep operations panels separate by responsibility
+
+Incident lifecycle controls, health/brief generation, and environment/communication panels live in separate modules behind a small composition root, preserving shared Zustand behavior without prop-drilling.
+
+## D-011: Measure accessibility and coverage with the existing test runner
+
+Vitest uses V8 coverage and axe-core in jsdom. Axe color-contrast checks are excluded in jsdom because layout/color computation is incomplete; contrast, focus and responsive behavior remain part of the real-browser walkthrough.
+
 ## D-001: Keep Vite + React SPA, no Next.js
 The reference uses Vite; the product is a single-page 3D app with a handful of
 serverless endpoints. Vercel serverless functions in `api/` cover the Gemini

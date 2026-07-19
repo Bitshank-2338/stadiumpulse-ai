@@ -1,5 +1,14 @@
 # StadiumPulse AI — Continuation State
 
+
+## Maintainability, coverage and WCAG follow-up (2026-07-19)
+
+- Split the 703-line Operations Command Center into a small composition root plus incident, overview and communication/environment panel modules.
+- Added scoped V8 coverage and axe-core checks for all six implemented primary views. “Fan Champion” is absent and was not invented during this no-redesign pass.
+- Added observable API, store, reduced-motion, focus, toggle and form-error tests.
+- Added associated empty-submit errors and live health/incident-count updates.
+- Browser audit passed 30 view/viewport combinations.
+
 > Handoff source of truth for any future session. Append; do not rewrite history.
 
 ## Session: Recovery audit (2026-07-19, evening)

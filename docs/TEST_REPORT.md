@@ -1,5 +1,14 @@
 # StadiumPulse AI — Test Report
 
+
+## 2026-07-19 (maintainability/testing/accessibility follow-up)
+
+- Baseline: lint/typecheck/build PASS; 95 tests passed, one credential-gated live test skipped. Initial unscoped coverage was 28.87% statements/lines, 59.63% functions and 79.29% branches and included generated/reference files.
+- Final scoped coverage: 53.14% statements/lines, 66.43% functions, 79.04% branches. Domain logic: 97.87% lines; store: 99.09%; App: 98.31%.
+- Axe checks covered six implemented primary views with zero jsdom-supported violations. Focus, landmarks, toggle semantics and error associations have behavioral assertions.
+- Thirty view/viewport combinations passed with no overflow, controls under 24×24, or console warnings/errors.
+- Remaining coverage gaps: WebGL scene code and async operator UI branches. The credential-gated live Vertex test remains skipped.
+
 ## 2026-07-19 (recovery session baseline)
 
 - Command: `npm run typecheck && npm run lint && npm test && npm run build`
