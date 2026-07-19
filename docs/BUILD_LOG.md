@@ -151,3 +151,20 @@
 - Validation: typecheck ✅, lint ✅, test 55/55 ✅, build ✅.
 - Runtime verified in browser: both buttons returned live Vertex Gemini
   results with GEMINI badges and audit-log entries.
+
+## Milestones 9–11 (partial) — Audit, Hardening, Submission Material (2026-07-19)
+
+- M9 responsive/a11y audit: all 6 views checked at 375px mobile viewport —
+  no horizontal overflow (nav is an intentional scrollable tab bar), no touch
+  targets under 32px, zero unlabeled controls, correct heading hierarchy.
+  Reduced-motion/high-contrast and ARIA'd WebGL fallback verified earlier.
+- M10 priority tests (Sonnet worker + orchestrator review): fan-intent.test.ts
+  (22 tests) and health.test.ts (16 tests, incl. hand-computed baseline 94).
+- Worker found 2 real fan-intent fallback bugs; orchestrator fixed root cause:
+  emergency rule now runs before facility rules (was shadowed by /medic/ for
+  "medical emergency") and matches "need help"/"help me" (was: "I need help"
+  → unknown). Documenting tests converted to regression tests.
+- M11: root README.md created (product statement, architecture, ADC-first
+  credential setup, Cloud Run deployment note, 19-step demo script,
+  limitations, PolyForm NC attribution).
+- Validation: typecheck ✅, lint ✅, test 93/93 ✅, build ✅.

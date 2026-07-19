@@ -23,3 +23,13 @@
   +advisories.test.ts with 7 schema-validation tests).
 - Runtime (browser): Transport advisory + Sustainability analysis buttons both
   returned live Vertex Gemini output (provenance GEMINI), audit entries logged.
+
+## 2026-07-19 (Milestones 9–10)
+
+- typecheck PASS · lint PASS · build PASS · vitest 93 passed, 1 skipped (11 files).
+- New: fan-intent.test.ts (22), health.test.ts (16 — exact baseline arithmetic).
+- Bugs fixed with regression tests: "medical emergency" was shadowed by the
+  first-aid keyword rule; "I need help" fell through to unknown. Both now
+  resolve to emergency_assistance.
+- Mobile audit (375px, all 6 views): no overflow, no small targets, no
+  unlabeled controls.

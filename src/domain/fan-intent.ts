@@ -68,6 +68,12 @@ export function interpretFanRequest(
     };
   }
 
+  // Emergency must be checked before facility rules: "medical emergency"
+  // would otherwise be swallowed by the first-aid /medic/ keyword match.
+  if (/emergency|urgent help|need help|help me|lost (my )?(child|kid|son|daughter)|missing/.test(t)) {
+    return { kind: 'emergency_assistance', mode, understood: 'Emergency assistance request' };
+  }
+
   if (/least crowded (gate|entrance)|which (gate|entrance)/.test(t)) {
     return {
       kind: 'least_crowded_gate',
@@ -124,9 +130,6 @@ export function interpretFanRequest(
   }
   if (/help desk|assistance|staff|volunteer/.test(t)) {
     return { kind: 'find_facility', facilityKinds: ['assistance_desk'], mode, understood: 'Nearest assistance desk' };
-  }
-  if (/emergency|urgent help|lost (my )?(child|kid|son|daughter)|missing/.test(t)) {
-    return { kind: 'emergency_assistance', mode, understood: 'Emergency assistance request' };
   }
   if (/exit|leave|way out/.test(t)) {
     return {
