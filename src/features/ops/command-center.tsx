@@ -8,8 +8,10 @@ import { useStadiumStore } from '../../store/stadium-store';
 import { computeHealth } from '../../domain/health';
 import { draftAnnouncementFallback } from '../../domain/announcements';
 import { HIGH_RISK_CATEGORIES } from '../../types/domain';
-import type { Incident, TeamId } from '../../types/domain';
+import type { AiProvenance, Incident, TeamId } from '../../types/domain';
 import { nodeLabel } from '../../store/selectors';
+import { aiClient } from '../../ai/client';
+import type { SituationBriefOut } from '../../ai/schemas';
 
 const TEAMS: TeamId[] = [
   'crowd-operations',
@@ -48,6 +50,7 @@ function IncidentCard({ incident }: { incident: Incident }) {
   const [note, setNote] = useState('');
   const [resolveBlocked, setResolveBlocked] = useState(false);
   const [announced, setAnnounced] = useState(false);
+  const [drafting, setDrafting] = useState(false);
 
   const highRisk = HIGH_RISK_CATEGORIES.includes(incident.category);
   const closed = incident.status === 'resolved' || incident.status === 'rejected';
@@ -57,15 +60,34 @@ function IncidentCard({ incident }: { incident: Incident }) {
     setResolveBlocked(!ok);
   };
 
-  const handleAnnounce = (): void => {
-    const draft = draftAnnouncementFallback(incident);
-    addAnnouncement({
-      incidentId: incident.id,
-      title: draft.title,
-      translations: draft.translations,
-      provenance: 'fallback',
-    });
-    setAnnounced(true);
+  const handleAnnounce = async (): Promise<void> => {
+    if (drafting) return;
+    setDrafting(true);
+    try {
+      const result = await aiClient.announcement(
+        {
+          incident: {
+            category: incident.category,
+            severity: incident.severity,
+            summary: incident.summary,
+            location: nodeLabel(incident.locationId),
+            approvedActions: incident.approvedActions.map(
+              (i) => incident.recommendedActions[i],
+            ),
+          },
+        },
+        () => draftAnnouncementFallback(incident),
+      );
+      addAnnouncement({
+        incidentId: incident.id,
+        title: result.data.title,
+        translations: result.data.translations,
+        provenance: result.provenance,
+      });
+      setAnnounced(true);
+    } finally {
+      setDrafting(false);
+    }
   };
 
   return (
@@ -163,10 +185,10 @@ function IncidentCard({ incident }: { incident: Incident }) {
               type="button"
               className="sp-btn"
               style={{ minHeight: 36 }}
-              onClick={handleAnnounce}
-              disabled={announced}
+              onClick={() => void handleAnnounce()}
+              disabled={announced || drafting}
             >
-              {announced ? 'Announcement drafted' : 'Draft announcement'}
+              {drafting ? 'Drafting…' : announced ? 'Announcement drafted' : 'Draft announcement'}
             </button>
             <button
               type="button"
@@ -241,6 +263,58 @@ export function CommandCenter() {
   const approveAnnouncement = useStadiumStore((s) => s.approveAnnouncement);
   const publishAnnouncement = useStadiumStore((s) => s.publishAnnouncement);
 
+  const [brief, setBrief] = useState<SituationBriefOut | null>(null);
+  const [briefProvenance, setBriefProvenance] = useState<AiProvenance>('fallback');
+  const [briefing, setBriefing] = useState(false);
+
+  const generateBrief = async (): Promise<void> => {
+    if (briefing) return;
+    setBriefing(true);
+    const s = useStadiumStore.getState();
+    const h = computeHealth(s);
+    const openIncidents = s.incidents
+      .filter((i) => i.status !== 'resolved' && i.status !== 'rejected')
+      .map((i) => ({
+        id: i.id,
+        category: i.category,
+        severity: i.severity,
+        summary: i.summary,
+        location: nodeLabel(i.locationId),
+        status: i.status,
+      }));
+    try {
+      const result = await aiClient.situationBrief(
+        {
+          scenario: s.simulation.activeScenario,
+          health: h,
+          openIncidents,
+          crowdHotspots: Object.entries(s.crowd)
+            .filter(([, v]) => v > 0.6)
+            .map(([zone, v]) => ({ zone, load: v })),
+          transport: s.transport,
+          sustainability: { alerts: s.sustainability.alerts, wasteFill: s.sustainability.wasteFill },
+        },
+        () => ({
+          headline: `Stadium health ${h.overall}/100 — ${openIncidents.length} open incident(s)`,
+          situation: `Scenario "${s.simulation.activeScenario.replace(/_/g, ' ')}" active. ${openIncidents.length} incident(s) open. Metro ${s.transport.metroStatus}.`,
+          observedFacts: [
+            `Health score ${h.overall}/100`,
+            ...openIncidents.slice(0, 4).map((i) => `${i.severity} ${i.category} at ${i.location}`),
+          ],
+          predictions: [],
+          recommendedPriorities: openIncidents.slice(0, 3).map((i) => `Address ${i.category} at ${i.location}`),
+          requiresOperatorDecision: openIncidents
+            .filter((i) => ['medical', 'security', 'missing_person', 'fire'].includes(i.category))
+            .map((i) => `Approve response for ${i.id}`),
+        }),
+      );
+      setBrief(result.data);
+      setBriefProvenance(result.provenance);
+    } finally {
+      setBriefing(false);
+    }
+  };
+
   const open = store.incidents.filter(
     (i) => i.status !== 'resolved' && i.status !== 'rejected',
   );
@@ -268,6 +342,65 @@ export function CommandCenter() {
           <span>Sustainability <span className={`sp-badge ${healthBadge(health.sustainability)}`}>{health.sustainability}</span></span>
           <span>Pending review <span className={`sp-badge ${pendingReview.length ? 'sp-badge-caution' : 'sp-badge-healthy'}`}>{pendingReview.length}</span></span>
         </div>
+      </section>
+
+      <section className="sp-card" aria-labelledby="brief-heading">
+        <h3 id="brief-heading">Situation brief</h3>
+        <button
+          type="button"
+          className="sp-btn sp-btn-primary"
+          disabled={briefing}
+          onClick={() => void generateBrief()}
+        >
+          {briefing ? 'Generating…' : brief ? 'Regenerate brief' : 'Generate situation brief'}
+        </button>
+        {brief && (
+          <div style={{ marginTop: 10 }} aria-live="polite">
+            <p>
+              <strong>{brief.headline}</strong>{' '}
+              <span className={`sp-provenance sp-badge ${briefProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
+                {briefProvenance === 'gemini' ? 'Gemini' : 'fallback'}
+              </span>
+            </p>
+            <p>{brief.situation}</p>
+            <h4 style={{ margin: '8px 0 4px' }}>Observed facts</h4>
+            <ul className="sp-list">
+              {brief.observedFacts.map((f) => (
+                <li key={f}>• {f}</li>
+              ))}
+            </ul>
+            {brief.predictions.length > 0 && (
+              <>
+                <h4 style={{ margin: '8px 0 4px' }}>Predictions (speculative)</h4>
+                <ul className="sp-list">
+                  {brief.predictions.map((p) => (
+                    <li key={p} className="sp-muted">
+                      ~ {p}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            <h4 style={{ margin: '8px 0 4px' }}>Priorities</h4>
+            <ol style={{ margin: 0, paddingLeft: 20 }}>
+              {brief.recommendedPriorities.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ol>
+            {brief.requiresOperatorDecision.length > 0 && (
+              <>
+                <h4 style={{ margin: '8px 0 4px' }}>Needs your decision</h4>
+                <ul className="sp-list">
+                  {brief.requiresOperatorDecision.map((d) => (
+                    <li key={d}>
+                      <span className="sp-badge sp-badge-caution">decision</span> {d}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       <section className="sp-card" aria-labelledby="queue-heading">

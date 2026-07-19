@@ -11,7 +11,8 @@ import {
 } from '../../domain/incident-extraction';
 import { STADIUM_GRAPH } from '../../data/stadium-graph';
 import { nodeLabel } from '../../store/selectors';
-import type { IncidentExtraction } from '../../types/domain';
+import { aiClient } from '../../ai/client';
+import type { AiProvenance, IncidentExtraction } from '../../types/domain';
 
 const LOCATION_OPTIONS = Object.values(STADIUM_GRAPH.nodes).map((n) => ({
   id: n.id,
@@ -46,18 +47,31 @@ export function VolunteerReporter() {
   const [text, setText] = useState('');
   const [locationHint, setLocationHint] = useState('');
   const [preview, setPreview] = useState<IncidentExtraction | null>(null);
+  const [provenance, setProvenance] = useState<AiProvenance>('fallback');
+  const [analyzing, setAnalyzing] = useState(false);
   const [submittedId, setSubmittedId] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState(false);
 
-  const analyze = (): void => {
-    if (!text.trim()) return;
-    const extraction = extractIncidentFallback(
-      text,
-      locationHint || undefined,
-    );
-    setPreview(extraction);
+  const analyze = async (): Promise<void> => {
+    if (!text.trim() || analyzing) return;
+    setAnalyzing(true);
     setSubmittedId(null);
-    setDuplicate(isDuplicateIncident(incidents, extraction));
+    try {
+      const result = await aiClient.extractIncident(
+        text,
+        locationHint || undefined,
+        () => extractIncidentFallback(text, locationHint || undefined),
+      );
+      // Location hint from the volunteer always wins over model output.
+      const extraction: IncidentExtraction = locationHint
+        ? { ...result.data, locationId: locationHint }
+        : result.data;
+      setPreview(extraction);
+      setProvenance(result.provenance);
+      setDuplicate(isDuplicateIncident(incidents, extraction));
+    } finally {
+      setAnalyzing(false);
+    }
   };
 
   const confirm = (): void => {
@@ -65,7 +79,7 @@ export function VolunteerReporter() {
     const incident = reportIncident(preview, {
       rawReport: text,
       reportedBy: 'volunteer',
-      provenance: 'fallback',
+      provenance,
     });
     setSubmittedId(incident.id);
     setPreview(null);
@@ -136,10 +150,10 @@ export function VolunteerReporter() {
           type="button"
           className="sp-btn sp-btn-primary"
           style={{ marginTop: 10, width: '100%' }}
-          disabled={!text.trim()}
-          onClick={analyze}
+          disabled={!text.trim() || analyzing}
+          onClick={() => void analyze()}
         >
-          Analyze report
+          {analyzing ? 'Analyzing…' : 'Analyze report'}
         </button>
       </section>
 
@@ -147,7 +161,9 @@ export function VolunteerReporter() {
         <section className="sp-card" aria-labelledby="preview-heading">
           <h3 id="preview-heading">
             Structured incident{' '}
-            <span className="sp-provenance sp-badge sp-badge-muted">rules fallback</span>
+            <span className={`sp-provenance sp-badge ${provenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
+              {provenance === 'gemini' ? 'Gemini' : 'rules fallback'}
+            </span>
           </h3>
           <ul className="sp-list">
             <li>

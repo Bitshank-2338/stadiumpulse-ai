@@ -38,6 +38,7 @@ export function App() {
   const crowd = useStadiumStore((s) => s.crowd);
   const routes = useStadiumStore((s) => s.routes);
 
+  const aiStatus = useStadiumStore((s) => s.aiStatus);
   const [view, setView] = useState<View>('fan');
   const [layers, setLayers] = useState<LayerState>({
     crowd: true,
@@ -88,6 +89,18 @@ export function App() {
         <h1 style={{ margin: 0, fontSize: 17, color: 'var(--sp-cyan)' }}>StadiumPulse AI</h1>
         <span style={{ fontSize: 12, color: 'var(--sp-text-muted)' }}>
           North America Tournament 2026 Simulation
+        </span>
+        <span
+          className={`sp-badge ${aiStatus.lastProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}
+          style={{ marginLeft: 'auto', fontSize: 11 }}
+          title={aiStatus.lastError ?? undefined}
+        >
+          AI:{' '}
+          {aiStatus.lastProvenance === null
+            ? 'idle'
+            : aiStatus.lastProvenance === 'gemini'
+              ? `Gemini ${aiStatus.lastLatencyMs ?? '–'}ms`
+              : 'deterministic fallback'}
         </span>
       </header>
 

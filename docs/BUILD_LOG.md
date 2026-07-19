@@ -88,3 +88,31 @@
   operator approval → 4-language announcement publish → elevator-outage
   reroute via south elevator → resolve → baseline recovery → audit trail.
 - Validation: `typecheck` ✅, `lint` ✅, `test` 37/37 ✅, `build` ✅.
+
+## Milestone 6 — Gemini Integration ✅ code / ⚠ live quota (2026-07-19)
+
+- SDK: `@google/genai` 2.12.0 (API verified against installed d.ts — GoogleGenAI
+  → models.generateContent → response.text, abortSignal supported).
+- `src/ai/config.ts`: central config — default model `gemini-2.5-flash-lite`
+  (cheap tier, GEMINI_MODEL overridable), 12s timeout, 1 repair attempt,
+  temp 0.3, 1024 max tokens, server rate limit 8 req/min + 1.5s min interval.
+- `src/ai/schemas.ts`: all seven required Zod schemas + route-explanation,
+  shared client/server; task registry.
+- `api/_lib/gemini-core.ts` (server-only): prompt-injection defence
+  (<untrusted_input> delimiting + strict system rules), stadium-graph
+  grounding (valid location ids listed), sliding-window rate limiter,
+  JSON parse → Zod validate → one repair prompt → structured error.
+- Endpoints: `api/gemini/{incident,fan-guidance,situation-brief,announcement}.ts`
+  via shared handler factory; Vite dev middleware serves the same core locally.
+  Key read from process.env only — never bundled.
+- `src/ai/client.ts`: frontend caller — timeout, Zod re-validation, provenance
+  tracking, aiStatus store updates, audit entry on every fallback.
+- UI wiring: volunteer extraction, fan intent + route explanation, ops
+  situation brief + announcement drafting — all provenance-badged
+  (Gemini cyan / fallback grey); header AI status chip with latency.
+- Tests: schema validation (8), client fallback behaviour (3 — network down,
+  invalid data, valid response), gated live smoke test.
+- Live smoke: pipeline reached Google successfully; account returned
+  429 RESOURCE_EXHAUSTED (prepayment credits depleted) — key/billing issue on
+  the user side. Fallback engaged correctly. Awaiting a funded/free-tier key.
+- Validation: `typecheck` ✅, `lint` ✅, `test` 48/48 ✅ (+1 gated live).

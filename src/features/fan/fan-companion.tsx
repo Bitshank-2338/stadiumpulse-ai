@@ -10,7 +10,8 @@ import type { RoutingContext } from '../../domain/routing';
 import { interpretFanRequest } from '../../domain/fan-intent';
 import { STADIUM_GRAPH } from '../../data/stadium-graph';
 import { nodeLabel } from '../../store/selectors';
-import type { RouteOutcome, RoutingMode } from '../../types/domain';
+import { aiClient } from '../../ai/client';
+import type { AiProvenance, RouteOutcome, RoutingMode } from '../../types/domain';
 
 const ORIGIN_OPTIONS = Object.values(STADIUM_GRAPH.nodes)
   .filter((n) => n.kind === 'gate' || n.kind === 'seating_entrance' || n.kind === 'concourse')
@@ -45,7 +46,10 @@ export function FanCompanion() {
   const [origin, setOrigin] = useState('gate-a');
   const [text, setText] = useState('');
   const [understood, setUnderstood] = useState<string | null>(null);
+  const [provenance, setProvenance] = useState<AiProvenance>('fallback');
+  const [thinking, setThinking] = useState(false);
   const [outcome, setOutcome] = useState<RouteOutcome | null>(null);
+  const [explanation, setExplanation] = useState<string | null>(null);
   const [emergencySent, setEmergencySent] = useState(false);
 
   const ctx: RoutingContext = useMemo(
@@ -71,12 +75,48 @@ export function FanCompanion() {
         outcome: result,
         createdAt: Date.now(),
       });
+      // Ask Gemini to explain the deterministically computed route.
+      void aiClient
+        .explainRoute(
+          {
+            from: nodeLabel(origin),
+            to: nodeLabel(toNodeId),
+            mode,
+            distanceMeters: result.distanceMeters,
+            etaSeconds: result.etaSeconds,
+            stepFree: result.stepFree,
+            usesElevator: result.usesElevator,
+            stops: result.nodeIds.map(nodeLabel),
+            notes: result.notes,
+            preferences: prefs,
+          },
+          () => ({
+            explanation: `Head from ${nodeLabel(origin)} to ${nodeLabel(toNodeId)} — about ${Math.max(1, Math.round(result.etaSeconds / 60))} minutes over ${result.distanceMeters} m.`,
+            accessibilityNotes: result.notes,
+          }),
+        )
+        .then((r) => setExplanation(r.data.explanation));
+    } else {
+      setExplanation(null);
     }
   };
 
-  const handleRequest = (request: string): void => {
+  const handleRequest = async (request: string): Promise<void> => {
+    if (thinking) return;
     setEmergencySent(false);
-    const intent = interpretFanRequest(request, prefs);
+    setThinking(true);
+    let intent;
+    try {
+      const result = await aiClient.interpretFan(
+        request,
+        { origin, preferences: prefs },
+        () => interpretFanRequest(request, prefs),
+      );
+      intent = result.data;
+      setProvenance(result.provenance);
+    } finally {
+      setThinking(false);
+    }
     setUnderstood(intent.understood);
 
     switch (intent.kind) {
@@ -180,7 +220,7 @@ export function FanCompanion() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (text.trim()) handleRequest(text);
+            if (text.trim()) void handleRequest(text);
           }}
           style={{ marginTop: 10 }}
         >
@@ -194,8 +234,13 @@ export function FanCompanion() {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
-          <button type="submit" className="sp-btn sp-btn-primary" style={{ marginTop: 8, width: '100%' }}>
-            Get guidance
+          <button
+            type="submit"
+            className="sp-btn sp-btn-primary"
+            style={{ marginTop: 8, width: '100%' }}
+            disabled={thinking}
+          >
+            {thinking ? 'Interpreting…' : 'Get guidance'}
           </button>
         </form>
 
@@ -205,7 +250,7 @@ export function FanCompanion() {
               key={qa.label}
               type="button"
               className={`sp-btn${qa.label === 'Emergency help' ? ' sp-btn-danger' : ''}`}
-              onClick={() => handleRequest(qa.request)}
+              onClick={() => void handleRequest(qa.request)}
             >
               {qa.label}
             </button>
@@ -216,7 +261,9 @@ export function FanCompanion() {
       {understood && (
         <p className="sp-muted" aria-live="polite">
           Understood: {understood}{' '}
-          <span className="sp-provenance sp-badge sp-badge-muted">rules</span>
+          <span className={`sp-provenance sp-badge ${provenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
+            {provenance === 'gemini' ? 'Gemini' : 'rules'}
+          </span>
         </p>
       )}
 
@@ -266,6 +313,7 @@ export function FanCompanion() {
               </span>
             )}
           </p>
+          {explanation && <p style={{ marginTop: 4 }}>{explanation}</p>}
           <ol style={{ margin: '6px 0 0', paddingLeft: 20 }}>
             {outcome.nodeIds.map((id) => (
               <li key={id}>{nodeLabel(id)}</li>

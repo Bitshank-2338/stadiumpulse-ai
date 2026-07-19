@@ -20,5 +20,12 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["vite.config.ts", "api"]
+  "include": [
+    "vite.config.ts",
+    "api",
+    "src/ai/config.ts",
+    "src/ai/schemas.ts",
+    "src/data/stadium-graph.ts",
+    "src/types/domain.ts"
+  ]
 }
