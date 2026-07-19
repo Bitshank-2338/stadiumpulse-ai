@@ -33,3 +33,11 @@
   resolve to emergency_assistance.
 - Mobile audit (375px, all 6 views): no overflow, no small targets, no
   unlabeled controls.
+
+## 2026-07-19 (judge-flow runtime verification)
+
+- Manual browser run with live Vertex Gemini: volunteer extraction, incident
+  propagation (health 94→89), announcement draft/approve/publish in 4
+  languages, fan receipt, elevator-outage step-free reroute via South
+  Elevator, audit trail — all verified.
+- Prompt fix re-verified live; all automated checks green (93/93).

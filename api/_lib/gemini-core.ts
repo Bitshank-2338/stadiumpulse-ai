@@ -68,7 +68,10 @@ If the location is unclear, choose the closest plausible valid id and add the un
 
   'fan-intent': `Interpret the fan request into a navigation intent.
 Schema: {"kind":"route_to_section|route_to_node|find_facility|least_crowded_gate|emergency_assistance|unknown","targetNodeId":"valid id (optional)","facilityKinds":["restroom|accessible_restroom|water_station|food_court|medical_room|quiet_room|assistance_desk|metro_point|shuttle_point"],"mode":"shortest|least_crowded|step_free|avoid_stairs|avoid_escalators|reduced_sensory|emergency_diversion","understood":"short human echo of what you understood"}
-Respect the fan's accessibility preferences from the state when picking mode.`,
+Respect the fan's accessibility preferences from the state when picking mode.
+Mode rules: "without stairs", "no stairs", "step-free" or any wheelchair-related
+request MUST map to mode "step_free" (escalators are NOT step-free — they have
+steps). Use "avoid_stairs" only when the fan explicitly accepts escalators.`,
 
   'route-explanation': `Explain the computed route in warm, clear language for a fan.
 The route was computed deterministically — do NOT alter it, only explain it.

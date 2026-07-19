@@ -168,3 +168,19 @@
   credential setup, Cloud Run deployment note, 19-step demo script,
   limitations, PolyForm NC attribution).
 - Validation: typecheck ✅, lint ✅, test 93/93 ✅, build ✅.
+
+## Milestone 12 (prep) — Judge Demo Runtime Verification (2026-07-19)
+
+- Full demo flow manually verified in the browser against live Vertex Gemini:
+  volunteer NL report → Gemini structured extraction (crowd/Gate B/50 people/
+  90% confidence, operator review required) → confirm → health 94→89 →
+  operator acknowledge + per-action approval → Gemini 4-language announcement
+  (EN/ES/FR/HI) → approve → publish → Fan Companion received it → elevator
+  outage scenario (health drop) → step-free route rerouted via South Elevator
+  (no escalators) → audit log captured every step.
+- Consistency fix found during verification: live Gemini mapped "without
+  stairs" to avoid_stairs (escalator route) while the deterministic fallback
+  maps it to step_free. Tightened the fan-intent task prompt with explicit
+  mode rules (escalators are not step-free); re-verified live: mode step_free,
+  outage reroute correct.
+- Validation: typecheck ✅, lint ✅, test 93/93 ✅, build ✅.
