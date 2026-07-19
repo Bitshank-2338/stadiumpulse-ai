@@ -12,6 +12,7 @@ import { HIGH_RISK_CATEGORIES } from '../../types/domain';
 import type { AiProvenance, Incident, TeamId } from '../../types/domain';
 import { nodeLabel } from '../../store/selectors';
 import { aiClient } from '../../ai/client';
+import { ProvenanceBadge } from '../../components/provenance-badge';
 import type {
   SituationBriefOut,
   SustainabilityRecommendationOut,
@@ -103,7 +104,7 @@ function IncidentCard({ incident }: { incident: Incident }) {
           <span className={`sp-badge ${STATUS_BADGE[incident.status]}`}>
             {incident.status.replace(/_/g, ' ')}
           </span>{' '}
-          <span className="sp-provenance sp-badge sp-badge-muted">{incident.provenance}</span>
+          <ProvenanceBadge provenance={incident.provenance} fallbackLabel={incident.provenance} />
         </span>
       </div>
       <p className="sp-muted" style={{ margin: '4px 0' }}>
@@ -134,16 +135,14 @@ function IncidentCard({ incident }: { incident: Incident }) {
                       <>
                         <button
                           type="button"
-                          className="sp-btn"
-                          style={{ minHeight: 32, padding: '2px 10px', fontSize: 12 }}
+                          className="sp-btn sp-btn-sm"
                           onClick={() => approveAction(incident.id, idx, 'operator')}
                         >
                           Approve
                         </button>
                         <button
                           type="button"
-                          className="sp-btn"
-                          style={{ minHeight: 32, padding: '2px 10px', fontSize: 12 }}
+                          className="sp-btn sp-btn-sm"
                           onClick={() => rejectAction(incident.id, idx, 'operator')}
                         >
                           Reject
@@ -156,7 +155,7 @@ function IncidentCard({ incident }: { incident: Incident }) {
             </ul>
           )}
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+          <div className="sp-row" style={{ marginTop: 6 }}>
             {incident.status === 'reported' && (
               <button
                 type="button"
@@ -253,7 +252,7 @@ function IncidentCard({ incident }: { incident: Incident }) {
         <ul className="sp-list" style={{ marginTop: 6 }}>
           {incident.notes.map((n) => (
             <li key={`${n.at}-${n.text}`} className="sp-muted">
-              📝 {n.text}
+              <span aria-hidden="true">📝</span> {n.text}
             </li>
           ))}
         </ul>
@@ -262,26 +261,39 @@ function IncidentCard({ incident }: { incident: Incident }) {
   );
 }
 
-export function CommandCenter() {
+function HealthSummary() {
   const store = useStadiumStore();
   const health = computeHealth(store);
-  const approveAnnouncement = useStadiumStore((s) => s.approveAnnouncement);
-  const publishAnnouncement = useStadiumStore((s) => s.publishAnnouncement);
+  const open = store.incidents.filter(
+    (i) => i.status !== 'resolved' && i.status !== 'rejected',
+  );
+  const pendingReview = open.filter(
+    (i) => i.requiresHumanApproval && i.approvedActions.length === 0,
+  );
 
-  const appendAudit = useStadiumStore((s) => s.appendAudit);
+  return (
+    <section className="sp-card" aria-labelledby="ops-heading">
+      <h2 id="ops-heading">Operations Command Center</h2>
+      <p>
+        Stadium health:{' '}
+        <span className={`sp-badge ${healthBadge(health.overall)}`}>{health.overall}/100</span>
+      </p>
+      <div className="sp-grid-2" style={{ fontSize: 13 }}>
+        <span>Crowd <span className={`sp-badge ${healthBadge(health.crowd)}`}>{health.crowd}</span></span>
+        <span>Incidents <span className={`sp-badge ${healthBadge(health.incidents)}`}>{health.incidents}</span></span>
+        <span>Accessibility <span className={`sp-badge ${healthBadge(health.accessibility)}`}>{health.accessibility}</span></span>
+        <span>Transport <span className={`sp-badge ${healthBadge(health.transport)}`}>{health.transport}</span></span>
+        <span>Sustainability <span className={`sp-badge ${healthBadge(health.sustainability)}`}>{health.sustainability}</span></span>
+        <span>Pending review <span className={`sp-badge ${pendingReview.length ? 'sp-badge-caution' : 'sp-badge-healthy'}`}>{pendingReview.length}</span></span>
+      </div>
+    </section>
+  );
+}
 
+function SituationBriefPanel() {
   const [brief, setBrief] = useState<SituationBriefOut | null>(null);
   const [briefProvenance, setBriefProvenance] = useState<AiProvenance>('fallback');
   const [briefing, setBriefing] = useState(false);
-
-  const [transportAdvisory, setTransportAdvisory] = useState<TransportAdvisoryOut | null>(null);
-  const [transportProvenance, setTransportProvenance] = useState<AiProvenance>('fallback');
-  const [transportLoading, setTransportLoading] = useState(false);
-
-  const [sustainabilityAdvisory, setSustainabilityAdvisory] =
-    useState<SustainabilityRecommendationOut | null>(null);
-  const [sustainabilityProvenance, setSustainabilityProvenance] = useState<AiProvenance>('fallback');
-  const [sustainabilityLoading, setSustainabilityLoading] = useState(false);
 
   const generateBrief = async (): Promise<void> => {
     if (briefing) return;
@@ -331,6 +343,183 @@ export function CommandCenter() {
     }
   };
 
+  return (
+    <section className="sp-card" aria-labelledby="brief-heading">
+      <h3 id="brief-heading">Situation brief</h3>
+      <button
+        type="button"
+        className="sp-btn sp-btn-primary"
+        disabled={briefing}
+        onClick={() => void generateBrief()}
+      >
+        {briefing ? 'Generating…' : brief ? 'Regenerate brief' : 'Generate situation brief'}
+      </button>
+      {brief && (
+        <div style={{ marginTop: 10 }} aria-live="polite">
+          <p>
+            <strong>{brief.headline}</strong> <ProvenanceBadge provenance={briefProvenance} />
+          </p>
+          <p>{brief.situation}</p>
+          <h4 style={{ margin: '8px 0 4px' }}>Observed facts</h4>
+          <ul className="sp-list">
+            {brief.observedFacts.map((f) => (
+              <li key={f}>• {f}</li>
+            ))}
+          </ul>
+          {brief.predictions.length > 0 && (
+            <>
+              <h4 style={{ margin: '8px 0 4px' }}>Predictions (speculative)</h4>
+              <ul className="sp-list">
+                {brief.predictions.map((p) => (
+                  <li key={p} className="sp-muted">
+                    ~ {p}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          <h4 style={{ margin: '8px 0 4px' }}>Priorities</h4>
+          <ol style={{ margin: 0, paddingLeft: 20 }}>
+            {brief.recommendedPriorities.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ol>
+          {brief.requiresOperatorDecision.length > 0 && (
+            <>
+              <h4 style={{ margin: '8px 0 4px' }}>Needs your decision</h4>
+              <ul className="sp-list">
+                {brief.requiresOperatorDecision.map((d) => (
+                  <li key={d}>
+                    <span className="sp-badge sp-badge-caution">decision</span> {d}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function IncidentQueue() {
+  const incidents = useStadiumStore((s) => s.incidents);
+  const open = incidents.filter(
+    (i) => i.status !== 'resolved' && i.status !== 'rejected',
+  );
+  const closedIncidents = incidents.filter(
+    (i) => i.status === 'resolved' || i.status === 'rejected',
+  );
+
+  return (
+    <section className="sp-card" aria-labelledby="queue-heading">
+      <h3 id="queue-heading">Incident queue ({open.length})</h3>
+      {open.length === 0 ? (
+        <p className="sp-muted">No active incidents. All clear.</p>
+      ) : (
+        <ul className="sp-list">
+          {open.map((i) => (
+            <IncidentCard key={i.id} incident={i} />
+          ))}
+        </ul>
+      )}
+      {closedIncidents.length > 0 && (
+        <details style={{ marginTop: 8 }}>
+          <summary className="sp-muted">Closed ({closedIncidents.length})</summary>
+          <ul className="sp-list" style={{ marginTop: 6 }}>
+            {closedIncidents.map((i) => (
+              <IncidentCard key={i.id} incident={i} />
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  );
+}
+
+function AnnouncementCenter() {
+  const announcements = useStadiumStore((s) => s.announcements);
+  const approveAnnouncement = useStadiumStore((s) => s.approveAnnouncement);
+  const publishAnnouncement = useStadiumStore((s) => s.publishAnnouncement);
+
+  return (
+    <section className="sp-card" aria-labelledby="annc-heading">
+      <h3 id="annc-heading">Announcement center</h3>
+      {announcements.length === 0 ? (
+        <p className="sp-muted">
+          No announcements yet. Draft one from an incident in the queue.
+        </p>
+      ) : (
+        <ul className="sp-list">
+          {announcements.map((a) => (
+            <li key={a.id} className="sp-card" style={{ padding: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
+                <strong>{a.title}</strong>
+                <span>
+                  <span className={`sp-badge ${a.status === 'published' ? 'sp-badge-healthy' : a.status === 'approved' ? 'sp-badge-cyan' : 'sp-badge-caution'}`}>
+                    {a.status}
+                  </span>{' '}
+                  <ProvenanceBadge provenance={a.provenance} fallbackLabel={a.provenance} />
+                </span>
+              </div>
+              <ul className="sp-list" style={{ marginTop: 6 }}>
+                {a.translations.map((tr) => (
+                  <li key={tr.language}>
+                    <span className="sp-badge sp-badge-muted">{tr.language.toUpperCase()}</span>{' '}
+                    <span lang={tr.language}>{tr.text}</span>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                {a.status === 'draft' && (
+                  <button
+                    type="button"
+                    className="sp-btn"
+                    onClick={() => approveAnnouncement(a.id, 'operator')}
+                  >
+                    Approve
+                  </button>
+                )}
+                {a.status === 'approved' && (
+                  <button
+                    type="button"
+                    className="sp-btn sp-btn-primary"
+                    onClick={() => publishAnnouncement(a.id, 'operator')}
+                  >
+                    Publish to all channels
+                  </button>
+                )}
+                {a.status === 'published' && (
+                  <span className="sp-muted">
+                    Live in Fan Companion since{' '}
+                    {a.publishedAt ? new Date(a.publishedAt).toLocaleTimeString() : ''}
+                  </span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function EnvironmentPanel() {
+  const facilities = useStadiumStore((s) => s.facilities);
+  const transport = useStadiumStore((s) => s.transport);
+  const sustainability = useStadiumStore((s) => s.sustainability);
+  const crowd = useStadiumStore((s) => s.crowd);
+  const appendAudit = useStadiumStore((s) => s.appendAudit);
+
+  const [transportAdvisory, setTransportAdvisory] = useState<TransportAdvisoryOut | null>(null);
+  const [transportProvenance, setTransportProvenance] = useState<AiProvenance>('fallback');
+  const [transportLoading, setTransportLoading] = useState(false);
+
+  const [sustainabilityAdvisory, setSustainabilityAdvisory] =
+    useState<SustainabilityRecommendationOut | null>(null);
+  const [sustainabilityProvenance, setSustainabilityProvenance] = useState<AiProvenance>('fallback');
+  const [sustainabilityLoading, setSustainabilityLoading] = useState(false);
+
   const generateTransportAdvisory = async (): Promise<void> => {
     if (transportLoading) return;
     setTransportLoading(true);
@@ -373,285 +562,142 @@ export function CommandCenter() {
     }
   };
 
-  const open = store.incidents.filter(
-    (i) => i.status !== 'resolved' && i.status !== 'rejected',
-  );
-  const closedIncidents = store.incidents.filter(
-    (i) => i.status === 'resolved' || i.status === 'rejected',
-  );
-  const pendingReview = open.filter(
-    (i) => i.requiresHumanApproval && i.approvedActions.length === 0,
-  );
-  const outages = Object.values(store.facilities).filter((f) => f.status === 'outage');
+  const outages = Object.values(facilities).filter((f) => f.status === 'outage');
+
+  // Text equivalent of the 3D crowd-heat overlay — per-zone occupancy, busiest first.
+  const crowdRows = Object.entries(crowd)
+    .map(([zoneId, intensity]) => ({ zoneId, intensity }))
+    .sort((a, b) => b.intensity - a.intensity);
 
   return (
-    <>
-      <section className="sp-card" aria-labelledby="ops-heading">
-        <h2 id="ops-heading">Operations Command Center</h2>
-        <p>
-          Stadium health:{' '}
-          <span className={`sp-badge ${healthBadge(health.overall)}`}>{health.overall}/100</span>
-        </p>
-        <div className="sp-grid-2" style={{ fontSize: 13 }}>
-          <span>Crowd <span className={`sp-badge ${healthBadge(health.crowd)}`}>{health.crowd}</span></span>
-          <span>Incidents <span className={`sp-badge ${healthBadge(health.incidents)}`}>{health.incidents}</span></span>
-          <span>Accessibility <span className={`sp-badge ${healthBadge(health.accessibility)}`}>{health.accessibility}</span></span>
-          <span>Transport <span className={`sp-badge ${healthBadge(health.transport)}`}>{health.transport}</span></span>
-          <span>Sustainability <span className={`sp-badge ${healthBadge(health.sustainability)}`}>{health.sustainability}</span></span>
-          <span>Pending review <span className={`sp-badge ${pendingReview.length ? 'sp-badge-caution' : 'sp-badge-healthy'}`}>{pendingReview.length}</span></span>
-        </div>
-      </section>
+    <section className="sp-card" aria-labelledby="env-heading">
+      <h3 id="env-heading">Environment</h3>
+      <ul className="sp-list">
+        <li>
+          Accessibility outages:{' '}
+          {outages.length === 0 ? (
+            <span className="sp-badge sp-badge-healthy">none</span>
+          ) : (
+            outages.map((f) => (
+              <span key={f.nodeId} className="sp-badge sp-badge-urgent" style={{ marginRight: 4 }}>
+                {nodeLabel(f.nodeId)}
+              </span>
+            ))
+          )}
+        </li>
+        <li>
+          Metro: <span className={`sp-badge ${transport.metroStatus === 'normal' ? 'sp-badge-healthy' : 'sp-badge-caution'}`}>{transport.metroStatus}</span>{' '}
+          Shuttle: <span className={`sp-badge ${transport.shuttleStatus === 'normal' ? 'sp-badge-healthy' : 'sp-badge-cyan'}`}>{transport.shuttleStatus}</span>
+        </li>
+        {transport.advisories.map((adv) => (
+          <li key={adv} className="sp-muted"><span aria-hidden="true">🚇</span> {adv}</li>
+        ))}
+        {Object.entries(sustainability.wasteFill).map(([id, fill]) => (
+          <li key={id}>
+            {nodeLabel(id)} waste:{' '}
+            <span className={`sp-badge ${fill > 0.8 ? 'sp-badge-urgent' : fill > 0.6 ? 'sp-badge-caution' : 'sp-badge-healthy'}`}>
+              {Math.round(fill * 100)}%
+            </span>
+          </li>
+        ))}
+        {sustainability.alerts.map((a) => (
+          <li key={a} className="sp-muted"><span aria-hidden="true">♻️</span> {a}</li>
+        ))}
+      </ul>
 
-      <section className="sp-card" aria-labelledby="brief-heading">
-        <h3 id="brief-heading">Situation brief</h3>
+      <h4 id="crowd-load-heading" style={{ margin: '10px 0 4px', fontSize: 13 }}>
+        Crowd load by zone
+      </h4>
+      <ul className="sp-list" aria-labelledby="crowd-load-heading">
+        {crowdRows.map((r) => (
+          <li key={r.zoneId} className="sp-muted">
+            {nodeLabel(r.zoneId)} — {Math.round(r.intensity * 100)}%
+          </li>
+        ))}
+      </ul>
+
+      <div className="sp-row sp-row-mt">
         <button
           type="button"
-          className="sp-btn sp-btn-primary"
-          disabled={briefing}
-          onClick={() => void generateBrief()}
+          className="sp-btn"
+          disabled={transportLoading}
+          onClick={() => void generateTransportAdvisory()}
         >
-          {briefing ? 'Generating…' : brief ? 'Regenerate brief' : 'Generate situation brief'}
+          {transportLoading ? 'Generating…' : 'Transport advisory'}
         </button>
-        {brief && (
-          <div style={{ marginTop: 10 }} aria-live="polite">
-            <p>
-              <strong>{brief.headline}</strong>{' '}
-              <span className={`sp-provenance sp-badge ${briefProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
-                {briefProvenance === 'gemini' ? 'Gemini' : 'fallback'}
-              </span>
-            </p>
-            <p>{brief.situation}</p>
-            <h4 style={{ margin: '8px 0 4px' }}>Observed facts</h4>
-            <ul className="sp-list">
-              {brief.observedFacts.map((f) => (
-                <li key={f}>• {f}</li>
-              ))}
-            </ul>
-            {brief.predictions.length > 0 && (
-              <>
-                <h4 style={{ margin: '8px 0 4px' }}>Predictions (speculative)</h4>
-                <ul className="sp-list">
-                  {brief.predictions.map((p) => (
-                    <li key={p} className="sp-muted">
-                      ~ {p}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-            <h4 style={{ margin: '8px 0 4px' }}>Priorities</h4>
-            <ol style={{ margin: 0, paddingLeft: 20 }}>
-              {brief.recommendedPriorities.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ol>
-            {brief.requiresOperatorDecision.length > 0 && (
-              <>
-                <h4 style={{ margin: '8px 0 4px' }}>Needs your decision</h4>
-                <ul className="sp-list">
-                  {brief.requiresOperatorDecision.map((d) => (
-                    <li key={d}>
-                      <span className="sp-badge sp-badge-caution">decision</span> {d}
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </div>
-        )}
-      </section>
+        <button
+          type="button"
+          className="sp-btn"
+          disabled={sustainabilityLoading}
+          onClick={() => void generateSustainabilityAnalysis()}
+        >
+          {sustainabilityLoading ? 'Analyzing…' : 'Sustainability analysis'}
+        </button>
+      </div>
 
-      <section className="sp-card" aria-labelledby="queue-heading">
-        <h3 id="queue-heading">Incident queue ({open.length})</h3>
-        {open.length === 0 ? (
-          <p className="sp-muted">No active incidents. All clear.</p>
-        ) : (
-          <ul className="sp-list">
-            {open.map((i) => (
-              <IncidentCard key={i.id} incident={i} />
-            ))}
-          </ul>
-        )}
-        {closedIncidents.length > 0 && (
-          <details style={{ marginTop: 8 }}>
-            <summary className="sp-muted">Closed ({closedIncidents.length})</summary>
-            <ul className="sp-list" style={{ marginTop: 6 }}>
-              {closedIncidents.map((i) => (
-                <IncidentCard key={i.id} incident={i} />
-              ))}
-            </ul>
-          </details>
-        )}
-      </section>
-
-      <section className="sp-card" aria-labelledby="annc-heading">
-        <h3 id="annc-heading">Announcement center</h3>
-        {store.announcements.length === 0 ? (
-          <p className="sp-muted">
-            No announcements yet. Draft one from an incident in the queue.
+      {transportAdvisory && (
+        <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
+          <p>
+            <strong>{transportAdvisory.headline}</strong> <ProvenanceBadge provenance={transportProvenance} />
           </p>
-        ) : (
+          <p>{transportAdvisory.advisory}</p>
+          {transportAdvisory.recommendedExits.length > 0 && (
+            <p className="sp-muted">
+              Recommended exits: {transportAdvisory.recommendedExits.join(', ')}
+            </p>
+          )}
+          <p className="sp-muted">Expected delay: {transportAdvisory.expectedDelayMinutes} min</p>
+        </div>
+      )}
+
+      {sustainabilityAdvisory && (
+        <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
+          <p>
+            <strong>{sustainabilityAdvisory.headline}</strong> <ProvenanceBadge provenance={sustainabilityProvenance} />
+          </p>
+          <p>{sustainabilityAdvisory.explanation}</p>
           <ul className="sp-list">
-            {store.announcements.map((a) => (
-              <li key={a.id} className="sp-card" style={{ padding: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                  <strong>{a.title}</strong>
-                  <span>
-                    <span className={`sp-badge ${a.status === 'published' ? 'sp-badge-healthy' : a.status === 'approved' ? 'sp-badge-cyan' : 'sp-badge-caution'}`}>
-                      {a.status}
-                    </span>{' '}
-                    <span className="sp-provenance sp-badge sp-badge-muted">{a.provenance}</span>
-                  </span>
-                </div>
-                <ul className="sp-list" style={{ marginTop: 6 }}>
-                  {a.translations.map((tr) => (
-                    <li key={tr.language}>
-                      <span className="sp-badge sp-badge-muted">{tr.language.toUpperCase()}</span>{' '}
-                      <span lang={tr.language}>{tr.text}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-                  {a.status === 'draft' && (
-                    <button
-                      type="button"
-                      className="sp-btn"
-                      onClick={() => approveAnnouncement(a.id, 'operator')}
-                    >
-                      Approve
-                    </button>
-                  )}
-                  {a.status === 'approved' && (
-                    <button
-                      type="button"
-                      className="sp-btn sp-btn-primary"
-                      onClick={() => publishAnnouncement(a.id, 'operator')}
-                    >
-                      Publish to all channels
-                    </button>
-                  )}
-                  {a.status === 'published' && (
-                    <span className="sp-muted">
-                      Live in Fan Companion since{' '}
-                      {a.publishedAt ? new Date(a.publishedAt).toLocaleTimeString() : ''}
-                    </span>
-                  )}
-                </div>
-              </li>
+            {sustainabilityAdvisory.actions.map((a) => (
+              <li key={a}>• {a}</li>
             ))}
           </ul>
-        )}
-      </section>
+        </div>
+      )}
+    </section>
+  );
+}
 
-      <section className="sp-card" aria-labelledby="env-heading">
-        <h3 id="env-heading">Environment</h3>
-        <ul className="sp-list">
-          <li>
-            Accessibility outages:{' '}
-            {outages.length === 0 ? (
-              <span className="sp-badge sp-badge-healthy">none</span>
-            ) : (
-              outages.map((f) => (
-                <span key={f.nodeId} className="sp-badge sp-badge-urgent" style={{ marginRight: 4 }}>
-                  {nodeLabel(f.nodeId)}
-                </span>
-              ))
-            )}
-          </li>
-          <li>
-            Metro: <span className={`sp-badge ${store.transport.metroStatus === 'normal' ? 'sp-badge-healthy' : 'sp-badge-caution'}`}>{store.transport.metroStatus}</span>{' '}
-            Shuttle: <span className={`sp-badge ${store.transport.shuttleStatus === 'normal' ? 'sp-badge-healthy' : 'sp-badge-cyan'}`}>{store.transport.shuttleStatus}</span>
-          </li>
-          {store.transport.advisories.map((adv) => (
-            <li key={adv} className="sp-muted">🚇 {adv}</li>
-          ))}
-          {Object.entries(store.sustainability.wasteFill).map(([id, fill]) => (
-            <li key={id}>
-              {nodeLabel(id)} waste:{' '}
-              <span className={`sp-badge ${fill > 0.8 ? 'sp-badge-urgent' : fill > 0.6 ? 'sp-badge-caution' : 'sp-badge-healthy'}`}>
-                {Math.round(fill * 100)}%
-              </span>
+function AuditLog() {
+  const auditLog = useStadiumStore((s) => s.auditLog);
+
+  return (
+    <section className="sp-card" aria-labelledby="audit-heading">
+      <h3 id="audit-heading">Audit log</h3>
+      {auditLog.length === 0 ? (
+        <p className="sp-muted">No entries yet.</p>
+      ) : (
+        <ul className="sp-list" style={{ fontFamily: 'var(--sp-font-mono)', fontSize: 12 }}>
+          {[...auditLog].reverse().slice(0, 30).map((e) => (
+            <li key={e.id}>
+              {new Date(e.at).toLocaleTimeString()} · {e.actor} ·{' '}
+              {e.action.replace(/_/g, ' ')} · {e.detail}
             </li>
           ))}
-          {store.sustainability.alerts.map((a) => (
-            <li key={a} className="sp-muted">♻️ {a}</li>
-          ))}
         </ul>
+      )}
+    </section>
+  );
+}
 
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          <button
-            type="button"
-            className="sp-btn"
-            disabled={transportLoading}
-            onClick={() => void generateTransportAdvisory()}
-          >
-            {transportLoading ? 'Generating…' : 'Transport advisory'}
-          </button>
-          <button
-            type="button"
-            className="sp-btn"
-            disabled={sustainabilityLoading}
-            onClick={() => void generateSustainabilityAnalysis()}
-          >
-            {sustainabilityLoading ? 'Analyzing…' : 'Sustainability analysis'}
-          </button>
-        </div>
-
-        {transportAdvisory && (
-          <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
-            <p>
-              <strong>{transportAdvisory.headline}</strong>{' '}
-              <span
-                className={`sp-provenance sp-badge ${transportProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}
-              >
-                {transportProvenance === 'gemini' ? 'Gemini' : 'fallback'}
-              </span>
-            </p>
-            <p>{transportAdvisory.advisory}</p>
-            {transportAdvisory.recommendedExits.length > 0 && (
-              <p className="sp-muted">
-                Recommended exits: {transportAdvisory.recommendedExits.join(', ')}
-              </p>
-            )}
-            <p className="sp-muted">Expected delay: {transportAdvisory.expectedDelayMinutes} min</p>
-          </div>
-        )}
-
-        {sustainabilityAdvisory && (
-          <div className="sp-card" style={{ marginTop: 10, padding: 10 }} aria-live="polite">
-            <p>
-              <strong>{sustainabilityAdvisory.headline}</strong>{' '}
-              <span
-                className={`sp-provenance sp-badge ${sustainabilityProvenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}
-              >
-                {sustainabilityProvenance === 'gemini' ? 'Gemini' : 'fallback'}
-              </span>
-            </p>
-            <p>{sustainabilityAdvisory.explanation}</p>
-            <ul className="sp-list">
-              {sustainabilityAdvisory.actions.map((a) => (
-                <li key={a}>• {a}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </section>
-
-      <section className="sp-card" aria-labelledby="audit-heading">
-        <h3 id="audit-heading">Audit log</h3>
-        {store.auditLog.length === 0 ? (
-          <p className="sp-muted">No entries yet.</p>
-        ) : (
-          <ul className="sp-list" style={{ fontFamily: 'var(--sp-font-mono)', fontSize: 12 }}>
-            {[...store.auditLog].reverse().slice(0, 30).map((e) => (
-              <li key={e.id}>
-                {new Date(e.at).toLocaleTimeString()} · {e.actor} ·{' '}
-                {e.action.replace(/_/g, ' ')} · {e.detail}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+export function CommandCenter() {
+  return (
+    <>
+      <HealthSummary />
+      <SituationBriefPanel />
+      <IncidentQueue />
+      <AnnouncementCenter />
+      <EnvironmentPanel />
+      <AuditLog />
     </>
   );
 }

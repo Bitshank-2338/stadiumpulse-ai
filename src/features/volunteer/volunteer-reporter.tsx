@@ -12,6 +12,7 @@ import {
 import { STADIUM_GRAPH } from '../../data/stadium-graph';
 import { nodeLabel } from '../../store/selectors';
 import { aiClient } from '../../ai/client';
+import { ProvenanceBadge } from '../../components/provenance-badge';
 import type { AiProvenance, IncidentExtraction } from '../../types/domain';
 
 const LOCATION_OPTIONS = Object.values(STADIUM_GRAPH.nodes).map((n) => ({
@@ -107,7 +108,12 @@ export function VolunteerReporter() {
           onChange={(e) => setText(e.target.value)}
         />
 
-        <div className="sp-grid-2" style={{ marginTop: 8 }}>
+        <div
+          className="sp-grid-2"
+          style={{ marginTop: 8 }}
+          role="group"
+          aria-label="Category shortcuts"
+        >
           {CATEGORY_SHORTCUTS.map((c) => (
             <button
               key={c.label}
@@ -158,12 +164,10 @@ export function VolunteerReporter() {
       </section>
 
       {preview && (
-        <section className="sp-card" aria-labelledby="preview-heading">
+        <section className="sp-card" aria-labelledby="preview-heading" aria-live="polite">
           <h3 id="preview-heading">
             Structured incident{' '}
-            <span className={`sp-provenance sp-badge ${provenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
-              {provenance === 'gemini' ? 'Gemini' : 'rules fallback'}
-            </span>
+            <ProvenanceBadge provenance={provenance} fallbackLabel="rules" />
           </h3>
           <ul className="sp-list">
             <li>

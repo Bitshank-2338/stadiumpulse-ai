@@ -153,10 +153,6 @@ export class StadiumScene {
     this.loop();
   }
 
-  get seatCount(): number {
-    return this.seating.seatCount;
-  }
-
   // ---- public API ---------------------------------------------------------
 
   setReducedMotion(b: boolean): void {
@@ -175,11 +171,6 @@ export class StadiumScene {
     this.orbit.thetaT = Math.atan2(p.z, p.x) + 0.001;
     this.orbit.phiT = 0.95;
     this.orbit.radiusT = radius;
-  }
-
-  topDown(): void {
-    this.orbit.phiT = 0.15;
-    this.orbit.radiusT = 300;
   }
 
   zoomBy(f: number): void {

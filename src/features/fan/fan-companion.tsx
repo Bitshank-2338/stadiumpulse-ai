@@ -11,7 +11,9 @@ import { interpretFanRequest } from '../../domain/fan-intent';
 import { STADIUM_GRAPH } from '../../data/stadium-graph';
 import { nodeLabel } from '../../store/selectors';
 import { aiClient } from '../../ai/client';
+import { ProvenanceBadge } from '../../components/provenance-badge';
 import type { AiProvenance, RouteOutcome, RoutingMode } from '../../types/domain';
+import type { FanIntentOut } from '../../ai/schemas';
 
 const ORIGIN_OPTIONS = Object.values(STADIUM_GRAPH.nodes)
   .filter((n) => n.kind === 'gate' || n.kind === 'seating_entrance' || n.kind === 'concourse')
@@ -51,6 +53,7 @@ export function FanCompanion() {
   const [outcome, setOutcome] = useState<RouteOutcome | null>(null);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [emergencySent, setEmergencySent] = useState(false);
+  const [blankRequestError, setBlankRequestError] = useState(false);
 
   const ctx: RoutingContext = useMemo(
     () => ({ graph: STADIUM_GRAPH, crowd, facilities }),
@@ -118,7 +121,7 @@ export function FanCompanion() {
     if (thinking) return;
     setEmergencySent(false);
     setThinking(true);
-    let intent;
+    let intent: FanIntentOut | undefined;
     try {
       const result = await aiClient.interpretFan(
         request,
@@ -233,9 +236,14 @@ export function FanCompanion() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (text.trim()) void handleRequest(text);
+            if (text.trim()) {
+              setBlankRequestError(false);
+              void handleRequest(text);
+            } else {
+              setBlankRequestError(true);
+            }
           }}
-          style={{ marginTop: 10 }}
+          className="sp-row-mt"
         >
           <label htmlFor="fan-request" className="sp-muted">
             Ask for anything
@@ -245,8 +253,16 @@ export function FanCompanion() {
             className="sp-input"
             placeholder='e.g. "Take me to Section 315 without stairs"'
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              setText(e.target.value);
+              setBlankRequestError(false);
+            }}
           />
+          {blankRequestError && (
+            <p role="alert" className="sp-muted">
+              Please describe where you want to go...
+            </p>
+          )}
           <button
             type="submit"
             className="sp-btn sp-btn-primary"
@@ -257,7 +273,11 @@ export function FanCompanion() {
           </button>
         </form>
 
-        <div className="sp-grid-2" style={{ marginTop: 10 }}>
+        <div
+          className="sp-grid-2 sp-row-mt"
+          role="group"
+          aria-label="Quick actions"
+        >
           {QUICK_ACTIONS.map((qa) => (
             <button
               key={qa.label}
@@ -273,10 +293,7 @@ export function FanCompanion() {
 
       {understood && (
         <p className="sp-muted" aria-live="polite">
-          Understood: {understood}{' '}
-          <span className={`sp-provenance sp-badge ${provenance === 'gemini' ? 'sp-badge-cyan' : 'sp-badge-muted'}`}>
-            {provenance === 'gemini' ? 'Gemini' : 'rules'}
-          </span>
+          Understood: {understood} <ProvenanceBadge provenance={provenance} fallbackLabel="rules" />
         </p>
       )}
 
@@ -308,7 +325,7 @@ export function FanCompanion() {
       )}
 
       {outcome?.ok && (
-        <section className="sp-card" aria-labelledby="route-heading">
+        <section className="sp-card" aria-labelledby="route-heading" aria-live="polite">
           <h3 id="route-heading">
             Your route{' '}
             {outcome.stepFree && <span className="sp-badge sp-badge-cyan">step-free</span>}

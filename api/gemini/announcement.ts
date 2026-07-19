@@ -1,7 +1,4 @@
 import { makeGeminiHandler } from '../_lib/handler';
+import { ENDPOINT_TASKS } from '../../src/ai/endpoints';
 
-export default makeGeminiHandler([
-  'announcement',
-  'transport-advisory',
-  'sustainability-recommendation',
-]);
+export default makeGeminiHandler(ENDPOINT_TASKS['announcement']);

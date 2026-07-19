@@ -89,3 +89,21 @@ Deployed: **https://stadiumpulse-ai-1030864030501.asia-south1.run.app**
 compute SA with roles/aiplatform.user; no keys. New files: server/index.ts,
 Dockerfile, .dockerignore. Redeploy with the same `gcloud run deploy` command
 in BUILD_LOG. Deployment decision resolved: Option A (Cloud Run).
+## Code-quality and accessibility completion pass (2026-07-19)
+
+- Recovered the interrupted Worker A/B/C changes without replacing existing work.
+- Worker A completed: one shared endpoint/task registry now drives the frontend,
+  Vite bridge, Vercel handlers and Cloud Run server; all server entry points use
+  the same typed error body; AI client context types are task-specific; unused
+  scene APIs were removed after consumer searches.
+- Worker B verified: one `main` landmark, view-heading focus management, visible
+  canvas focus treatment, and corrected normal/high-contrast borders.
+- Worker C completed: shared provenance badge adopted at all intended call sites;
+  Command Center decomposed into six cohesive child components; repeated layout
+  styles moved to utilities; live/status and blank-submit feedback added;
+  decorative emoji hidden; crowd heat has a per-zone text equivalent.
+- Validation: typecheck, lint, 95 tests, production build, and six-view mobile
+  browser pass. The live Gemini test remains intentionally gated by credentials.
+- Graphify semantic graph generation was unavailable because no supported
+  graphify LLM credential was configured; source-level dependency searches were
+  used for the final integration audit.

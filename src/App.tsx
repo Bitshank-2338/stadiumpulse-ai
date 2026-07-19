@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useStadiumStore } from './store/stadium-store';
 import { crowdHeat, facilityMarkers, incidentMarkers, outageMarkers } from './store/selectors';
 import { FanCompanion } from './features/fan/fan-companion';
@@ -47,6 +47,22 @@ export function App() {
     route: true,
     outages: true,
   });
+
+  const panelRef = useRef<HTMLElement>(null);
+  const isInitialMount = useRef(true);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    const heading = panelRef.current?.querySelector<HTMLElement>('h2');
+    if (heading) {
+      heading.tabIndex = -1;
+      heading.classList.add('sp-heading-focus');
+      heading.focus();
+    }
+  }, [view]);
 
   const markers = useMemo(() => {
     const out = [];
@@ -117,7 +133,7 @@ export function App() {
         ))}
       </nav>
 
-      <div className="sp-layout" style={{ flex: 1, paddingBottom: 22 }}>
+      <main className="sp-layout" style={{ flex: 1, paddingBottom: 22 }}>
         <div className="sp-scene-wrap">
           <Suspense
             fallback={
@@ -169,10 +185,10 @@ export function App() {
           </div>
         </div>
 
-        <aside className="sp-panel" aria-label="Controls">
+        <aside className="sp-panel" aria-label="Controls" ref={panelRef}>
           {view === 'twin' && (
-            <section className="sp-card">
-              <h2>Live digital twin</h2>
+            <section className="sp-card" aria-labelledby="twin-heading">
+              <h2 id="twin-heading">Live digital twin</h2>
               <p className="sp-muted">
                 Drag to rotate · scroll to zoom · arrow keys to orbit. Toggle
                 map layers in the top-left corner. Activate scenarios in the
@@ -194,7 +210,7 @@ export function App() {
           {view === 'ops' && <CommandCenter />}
           {view === 'scenarios' && <ScenarioLab />}
         </aside>
-      </div>
+      </main>
 
       <footer className="sp-disclaimer">
         Independent prototype. Not affiliated with or endorsed by FIFA. All

@@ -1,7 +1,4 @@
 import { makeGeminiHandler } from '../_lib/handler';
+import { ENDPOINT_TASKS } from '../../src/ai/endpoints';
 
-export default makeGeminiHandler([
-  'fan-intent',
-  'route-explanation',
-  'accessibility-explanation',
-]);
+export default makeGeminiHandler(ENDPOINT_TASKS['fan-guidance']);

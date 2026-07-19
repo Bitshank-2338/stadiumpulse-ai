@@ -179,3 +179,24 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
+
+/* Utility layout primitives (replace repeated inline styles) */
+.sp-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sp-row-mt {
+  margin-top: 10px;
+}
+.sp-btn-sm {
+  min-height: 32px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+
+/* Programmatic focus target only (not an interactive control); keyboard
+   users still get :focus-visible on real controls elsewhere. */
+.sp-heading-focus:focus {
+  outline: none;
+}

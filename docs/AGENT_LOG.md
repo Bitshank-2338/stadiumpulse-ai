@@ -71,3 +71,15 @@ Log of all specialist-agent handoffs, per the Context Handoff Protocol.
   honest fallbacks, prompt-injection defence good for userText but `context`
   undelimited (should-fix), Vertex-ADC-on-Vercel deployment mismatch flagged.
   ACCEPTED; context hardening + deploy decision queued.
+## Entry 00Y — Interrupted quality-pass recovery (2026-07-19)
+
+- **Worker A:** recovered and completed shared endpoint routing, typed error
+  responses, narrowed AI contexts, and dead scene API removal. Accepted after
+  contract tests and full validation.
+- **Worker B:** existing shell/accessibility changes verified in source and browser;
+  no rework required.
+- **Worker C:** recovered shared badge adoption, six Command Center child
+  components, utility styles, live feedback, decorative emoji handling, and the
+  crowd-heat text equivalent. Accepted after keyboard/mobile/browser checks.
+- **Files:** source changes listed by the final Git diff; documentation appended
+  without rewriting prior history.

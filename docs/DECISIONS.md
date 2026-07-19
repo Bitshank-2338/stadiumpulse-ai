@@ -38,3 +38,16 @@ store so no UI path or AI output can bypass it.
 ## D-007: Scenario engine supplies snapshots; store restores them
 `restoreBaseline(snapshot)` guarantees scenario reset restores a consistent
 initial state, avoiding drift from incremental undo.
+
+## D-008: Share endpoint routing and API error contracts across runtimes
+
+The frontend client, Vite development bridge, Vercel functions and Cloud Run
+server consume one endpoint/task registry. Server-generated failures use one
+typed `{ ok: false, error: string }` contract, preventing runtime drift while
+leaving successful AI behavior unchanged.
+
+## D-009: Accessible status is part of the component contract
+
+Async results use polite live regions, validation failures use alerts, decorative
+emoji are hidden from assistive technology, and the visual crowd-heat layer has
+a textual per-zone representation. Native HTML semantics remain preferred.

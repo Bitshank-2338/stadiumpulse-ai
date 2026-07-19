@@ -2,6 +2,8 @@
 import { defineConfig, loadEnv } from 'vite';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import { aiError, tasksForEndpoint } from './src/ai/endpoints';
+import type { AiTaskKind } from './src/ai/schemas';
 
 /**
  * Dev-only bridge that serves the same Gemini serverless logic locally at
@@ -9,12 +11,6 @@ import react from '@vitejs/plugin-react';
  * The API key stays in process.env on the dev server — never in the bundle.
  */
 function geminiDevApi(mode: string): Plugin {
-  const ENDPOINT_TASKS: Record<string, string[]> = {
-    incident: ['incident'],
-    'fan-guidance': ['fan-intent', 'route-explanation', 'accessibility-explanation'],
-    'situation-brief': ['situation-brief'],
-    announcement: ['announcement', 'transport-advisory', 'sustainability-recommendation'],
-  };
   return {
     name: 'stadiumpulse-gemini-dev-api',
     configureServer(server) {
@@ -33,14 +29,14 @@ function geminiDevApi(mode: string): Plugin {
       server.middlewares.use('/api/gemini', (req, res) => {
         void (async () => {
           const endpoint = (req.url ?? '').replace(/^\//, '').split('?')[0] ?? '';
-          const allowed = ENDPOINT_TASKS[endpoint];
+          const allowed = tasksForEndpoint(endpoint);
           const send = (status: number, body: unknown): void => {
             res.statusCode = status;
             res.setHeader('content-type', 'application/json');
             res.end(JSON.stringify(body));
           };
           if (!allowed || req.method !== 'POST') {
-            send(404, { ok: false, error: 'Unknown AI endpoint' });
+            send(404, aiError('Unknown AI endpoint'));
             return;
           }
           const chunks: Buffer[] = [];
@@ -51,23 +47,24 @@ function geminiDevApi(mode: string): Plugin {
           try {
             parsed = JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}') as typeof parsed;
           } catch {
-            send(400, { ok: false, error: 'Invalid JSON body' });
+            send(400, aiError('Invalid JSON body'));
             return;
           }
-          if (!parsed.task || !allowed.includes(parsed.task)) {
-            send(400, { ok: false, error: 'Invalid task for this endpoint' });
+          if (!parsed.task || !(allowed as readonly string[]).includes(parsed.task)) {
+            send(400, aiError('Invalid task for this endpoint'));
             return;
           }
           const { runGeminiTask } = await import('./api/_lib/gemini-core');
           const result = await runGeminiTask({
-            task: parsed.task as Parameters<typeof runGeminiTask>[0]['task'],
+            task: parsed.task as AiTaskKind,
             ...(typeof parsed.userText === 'string' ? { userText: parsed.userText } : {}),
             context: parsed.context,
           });
           send(result.ok ? 200 : result.status, result);
         })().catch((err: unknown) => {
           res.statusCode = 500;
-          res.end(JSON.stringify({ ok: false, error: String(err) }));
+          res.setHeader('content-type', 'application/json');
+          res.end(JSON.stringify(aiError(String(err))));
         });
       });
     },

@@ -20,23 +20,82 @@ import {
   TransportAdvisorySchema,
 } from './schemas';
 import type { AiTaskKind } from './schemas';
+import { ENDPOINT_FOR } from './endpoints';
 import { useStadiumStore } from '../store/stadium-store';
-import type { AiProvenance } from '../types/domain';
-
-const ENDPOINT_FOR: Record<AiTaskKind, string> = {
-  incident: 'incident',
-  'fan-intent': 'fan-guidance',
-  'route-explanation': 'fan-guidance',
-  'accessibility-explanation': 'fan-guidance',
-  'situation-brief': 'situation-brief',
-  announcement: 'announcement',
-  'transport-advisory': 'announcement',
-  'sustainability-recommendation': 'announcement',
-};
+import type {
+  AccessibilityPreferences,
+  AiProvenance,
+  HealthBreakdown,
+  IncidentCategory,
+  IncidentSeverity,
+  IncidentStatus,
+  RoutingMode,
+  SustainabilityState,
+  TransportState,
+} from '../types/domain';
 
 export interface AiCallResult<T> {
   data: T;
   provenance: AiProvenance;
+}
+
+// ---------------------------------------------------------------------------
+// Task context shapes — mirror the exact literals passed at call sites in
+// src/features/fan/fan-companion.tsx and src/features/ops/command-center.tsx.
+// ---------------------------------------------------------------------------
+
+export interface FanIntentContext {
+  origin: string;
+  preferences: AccessibilityPreferences;
+}
+
+export interface RouteExplanationContext {
+  from: string;
+  to: string;
+  mode: RoutingMode;
+  distanceMeters: number;
+  etaSeconds: number;
+  stepFree: boolean;
+  usesElevator: boolean;
+  stops: string[];
+  notes: string[];
+  preferences: AccessibilityPreferences;
+}
+
+export interface AnnouncementContext {
+  incident: {
+    category: IncidentCategory;
+    severity: IncidentSeverity;
+    summary: string;
+    location: string;
+    // Indexing `incident.recommendedActions[i]` under noUncheckedIndexedAccess
+    // yields `string | undefined`, so this stays loose to match the call site.
+    approvedActions: (string | undefined)[];
+  };
+}
+
+export interface SituationBriefContext {
+  scenario: string;
+  health: HealthBreakdown;
+  openIncidents: {
+    id: string;
+    category: IncidentCategory;
+    severity: IncidentSeverity;
+    summary: string;
+    location: string;
+    status: IncidentStatus;
+  }[];
+  crowdHotspots: { zone: string; load: number }[];
+  transport: TransportState;
+  sustainability: { alerts: string[]; wasteFill: Record<string, number> };
+}
+
+export interface TransportAdvisoryContext {
+  transport: TransportState;
+}
+
+export interface SustainabilityRecommendationContext {
+  sustainability: SustainabilityState;
 }
 
 async function callTask<T>(
@@ -99,7 +158,7 @@ export const aiClient = {
     userText: string,
     locationHint: string | undefined,
     fallback: () => z.infer<typeof IncidentExtractionSchema>,
-  ) =>
+  ): Promise<AiCallResult<z.infer<typeof IncidentExtractionSchema>>> =>
     callTask(
       'incident',
       IncidentExtractionSchema,
@@ -112,34 +171,39 @@ export const aiClient = {
 
   interpretFan: (
     userText: string,
-    context: unknown,
+    context: FanIntentContext,
     fallback: () => z.infer<typeof FanIntentSchema>,
-  ) => callTask('fan-intent', FanIntentSchema, { userText, context }, fallback),
+  ): Promise<AiCallResult<z.infer<typeof FanIntentSchema>>> =>
+    callTask('fan-intent', FanIntentSchema, { userText, context }, fallback),
 
   explainRoute: (
-    context: unknown,
+    context: RouteExplanationContext,
     fallback: () => z.infer<typeof RouteExplanationSchema>,
-  ) => callTask('route-explanation', RouteExplanationSchema, { context }, fallback),
+  ): Promise<AiCallResult<z.infer<typeof RouteExplanationSchema>>> =>
+    callTask('route-explanation', RouteExplanationSchema, { context }, fallback),
 
   situationBrief: (
-    context: unknown,
+    context: SituationBriefContext,
     fallback: () => z.infer<typeof SituationBriefSchema>,
-  ) => callTask('situation-brief', SituationBriefSchema, { context }, fallback),
+  ): Promise<AiCallResult<z.infer<typeof SituationBriefSchema>>> =>
+    callTask('situation-brief', SituationBriefSchema, { context }, fallback),
 
   announcement: (
-    context: unknown,
+    context: AnnouncementContext,
     fallback: () => z.infer<typeof AnnouncementSchema>,
-  ) => callTask('announcement', AnnouncementSchema, { context }, fallback),
+  ): Promise<AiCallResult<z.infer<typeof AnnouncementSchema>>> =>
+    callTask('announcement', AnnouncementSchema, { context }, fallback),
 
   transportAdvisory: (
-    context: unknown,
+    context: TransportAdvisoryContext,
     fallback: () => z.infer<typeof TransportAdvisorySchema>,
-  ) => callTask('transport-advisory', TransportAdvisorySchema, { context }, fallback),
+  ): Promise<AiCallResult<z.infer<typeof TransportAdvisorySchema>>> =>
+    callTask('transport-advisory', TransportAdvisorySchema, { context }, fallback),
 
   sustainabilityRecommendation: (
-    context: unknown,
+    context: SustainabilityRecommendationContext,
     fallback: () => z.infer<typeof SustainabilityRecommendationSchema>,
-  ) =>
+  ): Promise<AiCallResult<z.infer<typeof SustainabilityRecommendationSchema>>> =>
     callTask(
       'sustainability-recommendation',
       SustainabilityRecommendationSchema,
@@ -148,9 +212,9 @@ export const aiClient = {
     ),
 
   explainAccessibleRoute: (
-    context: unknown,
+    context: RouteExplanationContext,
     fallback: () => z.infer<typeof AccessibilityExplanationSchema>,
-  ) =>
+  ): Promise<AiCallResult<z.infer<typeof AccessibilityExplanationSchema>>> =>
     callTask(
       'accessibility-explanation',
       AccessibilityExplanationSchema,

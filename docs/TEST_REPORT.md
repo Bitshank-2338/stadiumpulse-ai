@@ -41,3 +41,20 @@
   languages, fan receipt, elevator-outage step-free reroute via South
   Elevator, audit trail — all verified.
 - Prompt fix re-verified live; all automated checks green (93/93).
+
+## 2026-07-19 (code-quality and accessibility completion)
+
+- `npm run typecheck`: PASS.
+- `npm run lint`: PASS.
+- `npm test -- --run`: PASS, 95 passed; 1 pre-existing credential-gated live
+  Gemini smoke test skipped.
+- `npm run build`: PASS, 77 modules transformed.
+- Browser: all six views loaded; exactly one `main` and one `nav`; view changes
+  focused their headings; canvas keyboard focus outline was visible; empty Fan
+  Companion submission exposed `role="alert"`; no console warnings/errors.
+- Mobile: all six views at 375×812 had no document-level horizontal overflow.
+- High contrast and reduced motion switches updated their explicit app state.
+- Crowd heat exposed a zone-by-zone text list equivalent to the 3D overlay.
+- `npm ci`: PASS. npm reported 11 dependency-audit findings (1 low, 4 moderate,
+  6 high); they were not auto-fixed because that could introduce unrelated or
+  breaking dependency changes outside this pass.

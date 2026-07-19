@@ -204,3 +204,11 @@
   returned live Vertex Gemini (provenance gemini, ~1.8–3.4s); route rendered
   in browser. Note: /healthz is intercepted by Google Frontend on run.app
   (reserved path) — harmless; Cloud Run health checks are container-level.
+## 2026-07-19 — Code-quality and accessibility completion
+
+- Consolidated endpoint routing and typed API errors across all runtime entry points.
+- Completed provenance, Command Center, shared-style and accessibility refactors.
+- Added endpoint-contract tests covering uniqueness, completeness, inverse routing,
+  unknown endpoint handling and the shared error body.
+- Commands: `npm ci`, `npm run typecheck`, `npm run lint`, `npm test -- --run`,
+  `npm run build`, plus local in-app browser checks at desktop and 375×812.

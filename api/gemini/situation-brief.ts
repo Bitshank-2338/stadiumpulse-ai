@@ -1,3 +1,4 @@
 import { makeGeminiHandler } from '../_lib/handler';
+import { ENDPOINT_TASKS } from '../../src/ai/endpoints';
 
-export default makeGeminiHandler(['situation-brief']);
+export default makeGeminiHandler(ENDPOINT_TASKS['situation-brief']);

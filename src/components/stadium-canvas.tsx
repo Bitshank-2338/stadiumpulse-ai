@@ -105,7 +105,7 @@ export function StadiumCanvas({
         ref={canvasRef}
         tabIndex={0}
         aria-label="Interactive 3D stadium digital twin. Drag to rotate, scroll to zoom, arrow keys to orbit."
-        style={{ width: '100%', height: '100%', display: 'block', outline: 'none', touchAction: 'none' }}
+        style={{ width: '100%', height: '100%', display: 'block', touchAction: 'none' }}
       />
       {status === 'loading' && (
         <div

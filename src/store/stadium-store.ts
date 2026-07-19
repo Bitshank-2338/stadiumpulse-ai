@@ -171,7 +171,15 @@ export const useStadiumStore = create<StadiumStore>((set, get) => {
     transport: INITIAL_TRANSPORT,
     sustainability: INITIAL_SUSTAINABILITY,
     announcements: [],
-    userPreferences: DEFAULT_PREFERENCES,
+    userPreferences: {
+      ...DEFAULT_PREFERENCES,
+      // Seed from the OS-level preference so users who never open the
+      // Accessibility panel still get reduced motion in the 3D scene.
+      reducedMotion:
+        typeof window !== 'undefined' &&
+        typeof window.matchMedia === 'function' &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    },
     auditLog: [],
     aiStatus: INITIAL_AI_STATUS,
 
